@@ -19,7 +19,7 @@ void kl_data::update(evaluation_data* right){
         for(prob_map::iterator it = other->original_probability_count.begin(); it != other->original_probability_count.end(); ++it){
             original_probability_count[it->first] = opc(it->first) + it->second;
         }
-    if(FINAL_PROBABILITIES)
+    if(CURRENT_CONFIG.FINAL_PROBABILITIES)
         original_finprob_count = fpc() + other->fpc();
 };
 
@@ -29,7 +29,7 @@ void kl_data::undo(evaluation_data* right){
     for(prob_map::iterator it = other->original_probability_count.begin(); it != other->original_probability_count.end(); ++it){
         original_probability_count[it->first] = opc(it->first) - it->second;
     }
-    if(FINAL_PROBABILITIES)
+    if(CURRENT_CONFIG.FINAL_PROBABILITIES)
         original_finprob_count = fpc() - other->fpc();
 };
 
@@ -68,12 +68,12 @@ void kldistance::update_score(state_merger *merger, apta_node* left, apta_node* 
 
     float left_divider = (float)l->pos_paths() + l->neg_paths();
     float right_divider = (float)r->pos_paths() + r->neg_paths();
-    if(FINAL_PROBABILITIES){
+    if(CURRENT_CONFIG.FINAL_PROBABILITIES){
         left_divider += (float)l->pos_final() + l->neg_final();
         right_divider += (float)r->pos_final() + r->neg_final();
     }
 
-    if(left_divider < STATE_COUNT || right_divider < STATE_COUNT) return;
+    if(left_divider < CURRENT_CONFIG.STATE_COUNT || right_divider < CURRENT_CONFIG.STATE_COUNT) return;
     if(left_divider < 1 || right_divider < 1) return;
 
         for(num_map::iterator it = l->counts_begin(); it != l->counts_end(); ++it){
@@ -83,7 +83,7 @@ void kldistance::update_score(state_merger *merger, apta_node* left, apta_node* 
             update_perplexity(left, l->opc(symbol), r->opc(symbol), left_count, right_count, left_divider, right_divider);
         }        
 
-    if(FINAL_PROBABILITIES){
+    if(CURRENT_CONFIG.FINAL_PROBABILITIES){
         int left_count = l->pos_final() + l->neg_final();
         int right_count = r->pos_final() + r->neg_final();
         update_perplexity(left, l->fpc(), r->fpc(), left_count, right_count, left_divider, right_divider);
@@ -94,7 +94,7 @@ bool kldistance::compute_consistency(state_merger *merger, apta_node* left, apta
   if (inconsistency_found) return false;
   if (extra_parameters == 0) return false;
 
-  if ((perplexity / (float)extra_parameters) > CHECK_PARAMETER) return false;
+  if ((perplexity / (float)extra_parameters) > CURRENT_CONFIG.CHECK_PARAMETER) return false;
 
   return true;
 };
@@ -121,7 +121,7 @@ void kldistance::initialize_after_adding_traces(state_merger* merger){
         kl_data *l = (kl_data *) node->get_data();
 
         float divider = l->pos_paths() + l->neg_paths();
-        if(FINAL_PROBABILITIES) divider += l->pos_final() + l->neg_final();
+        if(CURRENT_CONFIG.FINAL_PROBABILITIES) divider += l->pos_final() + l->neg_final();
 
         //float probability_mass = (float)node->get_size() / (float)merger->get_dat()->get_num_sequences();
 
@@ -133,7 +133,7 @@ void kldistance::initialize_after_adding_traces(state_merger* merger){
                 l->original_probability_count[symbol] = count * (count / divider);
             }
 
-        if(FINAL_PROBABILITIES){
+        if(CURRENT_CONFIG.FINAL_PROBABILITIES){
             float count = l->pos_final() + l->neg_final();
             l->original_finprob_count = count *  (count / divider);
         }

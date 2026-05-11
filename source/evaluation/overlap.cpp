@@ -26,18 +26,18 @@ bool overlap_driven::consistent(state_merger *merger, apta_node* left, apta_node
     overlap_data* l = (overlap_data*) left->get_data();
     overlap_data* r = (overlap_data*) right->get_data();
 
-    if(l->pos_paths() >= STATE_COUNT){
+    if(l->pos_paths() >= CURRENT_CONFIG.STATE_COUNT){
         for(num_map::iterator it = r->pos_begin(); it != r->pos_end(); ++it){
-            if(it->second >= SYMBOL_COUNT && l->pos(it->first) == 0){
+            if(it->second >= CURRENT_CONFIG.SYMBOL_COUNT && l->pos(it->first) == 0){
                 inconsistency_found = true;
                 return false;
             }
         }
     }
 
-    if(r->pos_paths() >= STATE_COUNT){
+    if(r->pos_paths() >= CURRENT_CONFIG.STATE_COUNT){
         for(num_map::iterator it = l->pos_begin(); it != l->pos_end(); ++it){
-            if(it->second >= SYMBOL_COUNT && r->pos(it->first) == 0){
+            if(it->second >= CURRENT_CONFIG.SYMBOL_COUNT && r->pos(it->first) == 0){
                 inconsistency_found = true;
                 return false;
             }

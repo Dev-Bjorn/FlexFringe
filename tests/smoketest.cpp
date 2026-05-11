@@ -16,8 +16,9 @@ evaluation_function* get_evaluation();
 void print_current_automaton(state_merger*, const std::string&, const std::string&);
 
 TEST_CASE( "Smoke test: greedy alergia on stamina 1_training", "[smoke]" ) {
-    HEURISTIC_NAME = "alergia";
-    DATA_NAME = "alergia_data";
+    CURRENT_CONFIG.CONFIG_NAME = "alergia";
+    CURRENT_CONFIG.HEURISTIC_NAME = "alergia";
+    CURRENT_CONFIG.DATA_NAME = "alergia_data";
 
     evaluation_function *eval = get_evaluation();
     REQUIRE(eval != nullptr);
@@ -35,7 +36,6 @@ TEST_CASE( "Smoke test: greedy alergia on stamina 1_training", "[smoke]" ) {
 
     apta the_apta;
     state_merger merger(&id, eval, &the_apta);
-    the_apta.set_context(&merger);
     eval->set_context(&merger);
 
     eval->initialize_before_adding_traces();
@@ -58,8 +58,9 @@ TEST_CASE( "Smoke test: greedy alergia on stamina 1_training", "[smoke]" ) {
 }
 
 TEST_CASE( "Smoke test: greedy edsm on stamina 1_training", "[smoke]" ) {
-    HEURISTIC_NAME = "evidence_driven";
-    DATA_NAME = "edsm_data";
+    CURRENT_CONFIG.CONFIG_NAME = "evidence_driven";
+    CURRENT_CONFIG.HEURISTIC_NAME = "evidence_driven";
+    CURRENT_CONFIG.DATA_NAME = "edsm_data";
 
     evaluation_function *eval = get_evaluation();
     REQUIRE(eval != nullptr);
@@ -74,7 +75,6 @@ TEST_CASE( "Smoke test: greedy edsm on stamina 1_training", "[smoke]" ) {
 
     apta* the_apta = new apta();
     auto* merger = new state_merger(&id, eval, the_apta);
-    the_apta->set_context(merger);
     eval->set_context(merger);
 
     eval->initialize_before_adding_traces();
@@ -109,8 +109,9 @@ TEST_CASE( "Smoke test: abbadingo input data with empty traces", "[smoke]" ) {
 // It will need updating whenever the dot output changes
 // TODO: Figure out a way to check if the dot output is valid without running graphviz
 TEST_CASE( "Smoke test: dot output", "[smoke]" ) {
-    HEURISTIC_NAME = "evidence_driven";
-    DATA_NAME = "edsm_data";
+    CURRENT_CONFIG.CONFIG_NAME = "evidence_driven";
+    CURRENT_CONFIG.HEURISTIC_NAME = "evidence_driven";
+    CURRENT_CONFIG.DATA_NAME = "edsm_data";
 
     evaluation_function *eval = get_evaluation();
     REQUIRE(eval != nullptr);
@@ -137,7 +138,6 @@ TEST_CASE( "Smoke test: dot output", "[smoke]" ) {
 
     apta* the_apta = new apta();
     auto* merger = new state_merger(&id, eval, the_apta);
-    the_apta->set_context(merger);
     eval->set_context(merger);
 
     eval->initialize_before_adding_traces();

@@ -55,14 +55,14 @@ int hash_vec(std::vector<int> const& vec, const int i){
 cms_data::cms_data() : alergia_data::alergia_data() {
     static bool initialized = false;
     if(!initialized){
-        for(int i = 0; i < NSTEPS_SKETCHES; ++i){
+        for(int i = 0; i < CURRENT_CONFIG.NSTEPS_SKETCHES; ++i){
             // TODO: initialize hash functions for containers with random seeds
         }
         initialized = true;
     }
 
-    for(int i = 0; i < NSTEPS_SKETCHES; ++i){
-        sketches.push_back( CountMinSketch<int>(NROWS_SKETCHES, NCOLUMNS_SKETCHES + 1) );
+    for(int i = 0; i < CURRENT_CONFIG.NSTEPS_SKETCHES; ++i){
+        sketches.push_back( CountMinSketch<int>(CURRENT_CONFIG.NROWS_SKETCHES, CURRENT_CONFIG.NCOLUMNS_SKETCHES + 1) );
     }
 };
 
@@ -107,20 +107,20 @@ void cms_data::add_tail(tail* t){
     //evaluation_data::add_tail(t);
 
     if(t->future() != 0 && t->future()->future() == 0){ // this sequence terminates here
-        sketches[0].storeAt(NCOLUMNS_SKETCHES, 0); // extra row for termination symbol
+        sketches[0].storeAt(CURRENT_CONFIG.NCOLUMNS_SKETCHES, 0); // extra row for termination symbol
     }
     else{
-        auto short_term_n_grams = get_n_grams(t, NSTEPS_SKETCHES);
+        auto short_term_n_grams = get_n_grams(t, CURRENT_CONFIG.NSTEPS_SKETCHES);
         int res = 0;
         int hashval = hash_vec(short_term_n_grams, 0);
-        sketches[0].store(hashval, 0, NCOLUMNS_SKETCHES);
-        for(int j = 1; j < NSTEPS_SKETCHES; ++j){
+        sketches[0].store(hashval, 0, CURRENT_CONFIG.NCOLUMNS_SKETCHES);
+        for(int j = 1; j < CURRENT_CONFIG.NSTEPS_SKETCHES; ++j){
             if(short_term_n_grams[j] == -1){
-                sketches[j].storeAt(NCOLUMNS_SKETCHES, 0);
+                sketches[j].storeAt(CURRENT_CONFIG.NCOLUMNS_SKETCHES, 0);
             }
             else{
                 hashval = hash_vec(short_term_n_grams, j);
-                sketches[j].store(hashval, 0, NCOLUMNS_SKETCHES);
+                sketches[j].store(hashval, 0, CURRENT_CONFIG.NCOLUMNS_SKETCHES);
             }
         }
     }
@@ -136,7 +136,7 @@ void cms_data::update(evaluation_data* right) {
     alergia_data::update(right);
     const cms_data* other = dynamic_cast<cms_data*>(right);
 
-    for(int j = 0; j < NSTEPS_SKETCHES; j++){
+    for(int j = 0; j < CURRENT_CONFIG.NSTEPS_SKETCHES; j++){
         this->sketches[j] + other->sketches[j];
     }
 };
@@ -151,7 +151,7 @@ void cms_data::undo(evaluation_data *right) {
     alergia_data::undo(right);
     const cms_data* other = dynamic_cast<cms_data*>(right);
 
-    for(int j = 0; j < NSTEPS_SKETCHES; j++){
+    for(int j = 0; j < CURRENT_CONFIG.NSTEPS_SKETCHES; j++){
         this->sketches[j] - other->sketches[j];
     }
 };
@@ -181,13 +181,13 @@ void cms_data::print_state_label(std::iostream& output){
  */
 bool cms::consistent(state_merger *merger, apta_node *left, apta_node *right) {
     if (inconsistency_found) return false;
-    if(left->get_size() <= STATE_COUNT || right->get_size() <= STATE_COUNT) return true;
+    if(left->get_size() <= CURRENT_CONFIG.STATE_COUNT || right->get_size() <= CURRENT_CONFIG.STATE_COUNT) return true;
 
     const cms_data* left_data = dynamic_cast<cms_data*>(left->get_data());
     const cms_data* right_data = dynamic_cast<cms_data*>(right->get_data());
 
     int thresh = 20;
-    for(int j = 1; j < NSTEPS_SKETCHES; j++){
+    for(int j = 1; j < CURRENT_CONFIG.NSTEPS_SKETCHES; j++){
         if(left_data->get_sketches()[j].getZeroSize() < thresh && right_data->get_sketches()[j].getSize() < thresh){
             inconsistency_found = true;
             return false;
@@ -195,23 +195,23 @@ bool cms::consistent(state_merger *merger, apta_node *left, apta_node *right) {
     }
     
     bool all_sketches_similar = true;
-    if(DISTANCE_METRIC_SKETCHES == 1){
-        for(int j = 0; j < NSTEPS_SKETCHES; j++){
+    if(CURRENT_CONFIG.DISTANCE_METRIC_SKETCHES == 1){
+        for(int j = 0; j < CURRENT_CONFIG.NSTEPS_SKETCHES; j++){
             //if(j>1) break;
-            all_sketches_similar = all_sketches_similar && CountMinSketch<int>::hoeffding(left_data->get_sketches()[j], right_data->get_sketches()[j], CHECK_PARAMETER);
+            all_sketches_similar = all_sketches_similar && CountMinSketch<int>::hoeffding(left_data->get_sketches()[j], right_data->get_sketches()[j], CURRENT_CONFIG.CHECK_PARAMETER);
             if(!all_sketches_similar) break;
         }
     }
-    else if(DISTANCE_METRIC_SKETCHES == 2){
+    else if(CURRENT_CONFIG.DISTANCE_METRIC_SKETCHES == 2){
 
-        for(int j = 0; j < NSTEPS_SKETCHES; j++){
-            all_sketches_similar = all_sketches_similar && CountMinSketch<int>::hoeffdingWithPooling(left_data->get_sketches()[j], right_data->get_sketches()[j], CHECK_PARAMETER, SYMBOL_COUNT, STATE_COUNT, CORRECTION);
+        for(int j = 0; j < CURRENT_CONFIG.NSTEPS_SKETCHES; j++){
+            all_sketches_similar = all_sketches_similar && CountMinSketch<int>::hoeffdingWithPooling(left_data->get_sketches()[j], right_data->get_sketches()[j], CURRENT_CONFIG.CHECK_PARAMETER, CURRENT_CONFIG.SYMBOL_COUNT, CURRENT_CONFIG.STATE_COUNT, CURRENT_CONFIG.CORRECTION);
             if(!all_sketches_similar) break;
         }
     }
-    else if(DISTANCE_METRIC_SKETCHES == 3){
-        for(int j = 0; j < NSTEPS_SKETCHES; j++){
-            float score = CountMinSketch<int>::hoeffdingScore(left_data->get_sketches()[j], right_data->get_sketches()[j], CHECK_PARAMETER);
+    else if(CURRENT_CONFIG.DISTANCE_METRIC_SKETCHES == 3){
+        for(int j = 0; j < CURRENT_CONFIG.NSTEPS_SKETCHES; j++){
+            float score = CountMinSketch<int>::hoeffdingScore(left_data->get_sketches()[j], right_data->get_sketches()[j], CURRENT_CONFIG.CHECK_PARAMETER);
             if(score < 0){
                 all_sketches_similar = false;
                 break;
@@ -243,23 +243,23 @@ double cms::compute_score(state_merger *merger, apta_node *left, apta_node *righ
     const cms_data* left_data = dynamic_cast<cms_data*>(left->get_data());
     const cms_data* right_data = dynamic_cast<cms_data*>(right->get_data());
 
-    if(DISTANCE_METRIC_SKETCHES == 1){
+    if(CURRENT_CONFIG.DISTANCE_METRIC_SKETCHES == 1){
         scoresum = 0; 
         const float max_size = static_cast<float>(left_data->get_sketches()[0].getZeroSize() + right_data->get_sketches()[0].getZeroSize());
-        for(int j = 0; j < NSTEPS_SKETCHES; j++){
+        for(int j = 0; j < CURRENT_CONFIG.NSTEPS_SKETCHES; j++){
             float current_size = static_cast<float>(left_data->get_sketches()[j].getZeroSize() + right_data->get_sketches()[j].getZeroSize());
             scoresum += CountMinSketch<int>::cosineSimilarity(left_data->get_sketches()[j], right_data->get_sketches()[j]);
         }
     }
-    else if(DISTANCE_METRIC_SKETCHES == 2){
+    else if(CURRENT_CONFIG.DISTANCE_METRIC_SKETCHES == 2){
         scoresum = 0; 
         const float max_size = static_cast<float>(left_data->get_sketches()[0].getZeroSize() + right_data->get_sketches()[0].getZeroSize());
-        for(int j = 0; j < NSTEPS_SKETCHES; j++){
+        for(int j = 0; j < CURRENT_CONFIG.NSTEPS_SKETCHES; j++){
             float current_size = static_cast<float>(left_data->get_sketches()[j].getZeroSize() + right_data->get_sketches()[j].getZeroSize());
             scoresum += (current_size / max_size) * CountMinSketch<int>::cosineSimilarity(left_data->get_sketches()[j], right_data->get_sketches()[j]);
         }
     }
-    else if(DISTANCE_METRIC_SKETCHES == 3){
+    else if(CURRENT_CONFIG.DISTANCE_METRIC_SKETCHES == 3){
         return scoresum;        
     }
 

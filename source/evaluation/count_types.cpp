@@ -217,15 +217,15 @@ void count_guard_data::undo(evaluation_guard_data* right){
 
 double count_data::predict_type_score(int t){
     double final_count = 0.0;
-    double divider_correction = CORRECTION * (double)final_counts.size();
-    if(divider_correction == 0.0) divider_correction += CORRECTION;
+    double divider_correction = CURRENT_CONFIG.CORRECTION * (double)final_counts.size();
+    if(divider_correction == 0.0) divider_correction += CURRENT_CONFIG.CORRECTION;
     if(final_counts.find(t) != final_counts.end() && final_counts[t] != 0.0) final_count = (double)final_counts[t] / (double)(total_final + divider_correction);
-    final_count += (double)(CORRECTION) / (double)(total_final + divider_correction);
+    final_count += (double)(CURRENT_CONFIG.CORRECTION) / (double)(total_final + divider_correction);
 
     if(!PREDICT_TYPE_PATH) return final_count;
-    double path_count = CORRECTION;
-    divider_correction = CORRECTION * (double)path_counts.size();
-    if(divider_correction == 0.0) divider_correction += CORRECTION;
+    double path_count = CURRENT_CONFIG.CORRECTION;
+    divider_correction = CURRENT_CONFIG.CORRECTION * (double)path_counts.size();
+    if(divider_correction == 0.0) divider_correction += CURRENT_CONFIG.CORRECTION;
     if(path_counts.find(t) != path_counts.end() && path_counts[t] != 0.0) path_count = (double)path_counts[t] / (double)(total_paths+divider_correction);
     return (path_count + final_count) / 2.0;
 };
@@ -248,7 +248,7 @@ bool count_driven::consistent(state_merger *merger, apta_node* left, apta_node* 
     evaluation_function::consistent(merger, left, right);
     if(inconsistency_found) return false;
 
-    if(!TYPE_CONSISTENT) return true;
+    if(!CURRENT_CONFIG.TYPE_CONSISTENT) return true;
   
     auto* l = (count_data*)left->get_data();
     auto* r = (count_data*)right->get_data();
@@ -289,11 +289,11 @@ void count_driven::reset(state_merger *merger){
 
 // sinks for evaluation data type
 bool count_data::is_low_count_sink(){
-    return num_paths() + num_final() < SINK_COUNT;
+    return num_paths() + num_final() < CURRENT_CONFIG.SINK_COUNT;
 }
 
 int count_data::get_type_sink(){
-    if(!USE_SINKS) return -1;
+    if(!CURRENT_CONFIG.USE_SINKS) return -1;
 
     int type = -1;
     for(auto & path_count : path_counts){
@@ -314,27 +314,27 @@ int count_data::get_type_sink(){
 }
 
 bool count_data::sink_consistent(int type) {
-    if (!USE_SINKS) return true;
-    if (SINK_TYPE && get_type_sink() == type) return true;
-    if (type == 0 && SINK_COUNT > 0 && is_low_count_sink()) return true;
+    if (!CURRENT_CONFIG.USE_SINKS) return true;
+    if (CURRENT_CONFIG.SINK_TYPE && get_type_sink() == type) return true;
+    if (type == 0 && CURRENT_CONFIG.SINK_COUNT > 0 && is_low_count_sink()) return true;
     return false;
 }
 
 int count_data::num_sink_types(){
-    if(!USE_SINKS) return 0;
+    if(!CURRENT_CONFIG.USE_SINKS) return 0;
     int result = 0;
-    if(SINK_TYPE) result += inputdata_locator::get()->get_types_size();
-    if(SINK_COUNT > 0) result += 1;
+    if(CURRENT_CONFIG.SINK_TYPE) result += inputdata_locator::get()->get_types_size();
+    if(CURRENT_CONFIG.SINK_COUNT > 0) result += 1;
     return result;
 }
 
 int count_data::sink_type(){
-    if(!USE_SINKS) return -1;
-    if(SINK_TYPE){
+    if(!CURRENT_CONFIG.USE_SINKS) return -1;
+    if(CURRENT_CONFIG.SINK_TYPE){
         int result = get_type_sink();
         if(result != -1) return result + 1;
     }
-    if(SINK_COUNT > 0 && is_low_count_sink()) return 0;
+    if(CURRENT_CONFIG.SINK_COUNT > 0 && is_low_count_sink()) return 0;
     return -1;
 }
 

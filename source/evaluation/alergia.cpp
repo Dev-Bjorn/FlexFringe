@@ -14,28 +14,28 @@ REGISTER_DEF_TYPE(alergia);
 void alergia::update_divider(double left_count, double right_count, double& left_divider, double& right_divider){
     //cerr << "updating " << left_count << " " << right_count << " " << left_divider << " " << right_divider << endl;
     if(left_count == 0.0 && right_count == 0.0) return;
-    if(left_count < SYMBOL_COUNT || right_count < SYMBOL_COUNT) return;
-    left_divider += left_count + CORRECTION;
-    right_divider += right_count + CORRECTION;
+    if(left_count < CURRENT_CONFIG.SYMBOL_COUNT || right_count < CURRENT_CONFIG.SYMBOL_COUNT) return;
+    left_divider += left_count + CURRENT_CONFIG.CORRECTION;
+    right_divider += right_count + CURRENT_CONFIG.CORRECTION;
     //cerr << "updating " << left_count << " " << right_count << " " << left_divider << " " << right_divider << endl;
 }
 
 void alergia::update_divider_pool(double left_pool, double right_pool, double& left_divider, double& right_divider){
     if(left_pool == 0.0 && right_pool == 0.0) return;
-    left_divider += left_pool + CORRECTION;
-    right_divider += right_pool + CORRECTION;
+    left_divider += left_pool + CURRENT_CONFIG.CORRECTION;
+    right_divider += right_pool + CURRENT_CONFIG.CORRECTION;
 }
 
 void alergia::update_left_pool(double left_count, double right_count, double& left_pool, double& right_pool){
     if(left_count == 0.0 && right_count == 0.0) return;
-    if(right_count >= SYMBOL_COUNT) return;
+    if(right_count >= CURRENT_CONFIG.SYMBOL_COUNT) return;
     left_pool += left_count;
     right_pool += right_count;
 }
 
 void alergia::update_right_pool(double left_count, double right_count, double& left_pool, double& right_pool){
     if(left_count == 0.0 && right_count == 0.0) return;
-    if(left_count >= SYMBOL_COUNT) return;
+    if(left_count >= CURRENT_CONFIG.SYMBOL_COUNT) return;
     left_pool += left_count;
     right_pool += right_count;
 }
@@ -47,22 +47,22 @@ void alergia_data::get_symbol_divider(double& divider, double& count){
     double per_seen_correction = 0.0;
     for(auto & it : symbol_counts){
         if(it.second > 0){
-            per_seen_correction += CORRECTION_PER_SEEN;
+            per_seen_correction += CURRENT_CONFIG.CORRECTION_PER_SEEN;
         }
     }
-    if(FINAL_PROBABILITIES && num_final() > 0){
-        per_seen_correction += CORRECTION_PER_SEEN;
+    if(CURRENT_CONFIG.FINAL_PROBABILITIES && num_final() > 0){
+        per_seen_correction += CURRENT_CONFIG.CORRECTION_PER_SEEN;
     }
     for(auto & it : symbol_counts){
         if(it.second > 0) {
-            divider += (double) it.second + CORRECTION + CORRECTION_SEEN + per_seen_correction;
+            divider += (double) it.second + CURRENT_CONFIG.CORRECTION + CURRENT_CONFIG.CORRECTION_SEEN + per_seen_correction;
         }
     }
-    if(FINAL_PROBABILITIES && num_final() > 0){
-        divider += (double) num_final() + CORRECTION + CORRECTION_SEEN + per_seen_correction;
+    if(CURRENT_CONFIG.FINAL_PROBABILITIES && num_final() > 0){
+        divider += (double) num_final() + CURRENT_CONFIG.CORRECTION + CURRENT_CONFIG.CORRECTION_SEEN + per_seen_correction;
     }
 
-    count = (double)(CORRECTION + CORRECTION_UNSEEN) + per_seen_correction;
+    count = (double)(CURRENT_CONFIG.CORRECTION + CURRENT_CONFIG.CORRECTION_UNSEEN) + per_seen_correction;
     divider += count;
 }
 
@@ -71,24 +71,24 @@ void alergia_data::get_type_divider(double& divider, double& count){
     double per_seen_correction = 0.0;
     for(auto & it : path_counts){
         if(it.second > 0){
-            per_seen_correction += CORRECTION_PER_SEEN;
+            per_seen_correction += CURRENT_CONFIG.CORRECTION_PER_SEEN;
         }
     }
-    if(FINAL_PROBABILITIES && num_final() > 0){
-        per_seen_correction += CORRECTION_PER_SEEN;
+    if(CURRENT_CONFIG.FINAL_PROBABILITIES && num_final() > 0){
+        per_seen_correction += CURRENT_CONFIG.CORRECTION_PER_SEEN;
     }
     for(auto & it : path_counts){
         if(it.second > 0) {
-            divider += (double) it.second + CORRECTION + CORRECTION_SEEN + per_seen_correction;
+            divider += (double) it.second + CURRENT_CONFIG.CORRECTION + CURRENT_CONFIG.CORRECTION_SEEN + per_seen_correction;
         }
     }
-    if(FINAL_PROBABILITIES && num_final() > 0){
+    if(CURRENT_CONFIG.FINAL_PROBABILITIES && num_final() > 0){
         for(auto & it : final_counts) {
-            divider += (double) it.second + CORRECTION + CORRECTION_SEEN + per_seen_correction;
+            divider += (double) it.second + CURRENT_CONFIG.CORRECTION + CURRENT_CONFIG.CORRECTION_SEEN + per_seen_correction;
         }
     }
 
-    count = (double)(CORRECTION + CORRECTION_UNSEEN) + per_seen_correction;
+    count = (double)(CURRENT_CONFIG.CORRECTION + CURRENT_CONFIG.CORRECTION_UNSEEN) + per_seen_correction;
     divider += count;
 }
 
@@ -186,7 +186,7 @@ int alergia_data::predict_symbol(tail*){
             max_symbol = symbol_count.first;
         }
     }
-    if(FINAL_PROBABILITIES){
+    if(CURRENT_CONFIG.FINAL_PROBABILITIES){
         if(max_count == -1 || max_count < num_final()){
             max_symbol = -1;
         }
@@ -201,7 +201,7 @@ double alergia_data::predict_symbol_score(int t){
 
     if(t != -1) {
         if (symbol_counts.find(t) != symbol_counts.end()) count += (double) symbol_counts[t];
-    } else if (FINAL_PROBABILITIES) count += (double) num_final();
+    } else if (CURRENT_CONFIG.FINAL_PROBABILITIES) count += (double) num_final();
     else return 1.0;
 
     if(divider != 0.0) return log(count / divider);
@@ -240,9 +240,9 @@ double alergia::alergia_check(double right_count, double left_count, double righ
     if(left_total == 0.0 || right_total == 0.0) return 0.0;
 
     double bound = (1.0 / sqrt(left_total) + 1.0 / sqrt(right_total));
-    bound = bound * sqrt(0.5 * log(2.0 / CHECK_PARAMETER));
+    bound = bound * sqrt(0.5 * log(2.0 / CURRENT_CONFIG.CHECK_PARAMETER));
 
-    double gamma = ((left_count + CORRECTION) / left_total) - ((right_count + CORRECTION) / right_total);
+    double gamma = ((left_count + CURRENT_CONFIG.CORRECTION) / left_total) - ((right_count + CURRENT_CONFIG.CORRECTION) / right_total);
     if(gamma < 0) gamma = -gamma;
 
     return bound - gamma;
@@ -296,7 +296,7 @@ bool alergia::compute_tests(num_map& left_map, int left_total, int left_final,
     r2_pool += right_total - matching_right;
 
     /* optionally add final probabilities (input parameter) */
-    if(FINAL_PROBABILITIES){
+    if(CURRENT_CONFIG.FINAL_PROBABILITIES){
         update_divider(left_final, right_final, left_divider, right_divider);
         update_left_pool(left_final, right_final, l1_pool, r1_pool);
         update_right_pool(left_final, right_final, l2_pool, r2_pool);
@@ -336,18 +336,18 @@ bool alergia::consistent(state_merger *merger, apta_node* left, apta_node* right
     auto* l = (alergia_data*) left->get_data();
     auto* r = (alergia_data*) right->get_data();
 
-    if(FINAL_PROBABILITIES){
-        if(r->num_paths() + r->num_final() < STATE_COUNT || l->num_paths() + l->num_final() < STATE_COUNT) return true;
+    if(CURRENT_CONFIG.FINAL_PROBABILITIES){
+        if(r->num_paths() + r->num_final() < CURRENT_CONFIG.STATE_COUNT || l->num_paths() + l->num_final() < CURRENT_CONFIG.STATE_COUNT) return true;
     } else {
-        if(r->num_paths() < STATE_COUNT || l->num_paths() < STATE_COUNT) return true;
+        if(r->num_paths() < CURRENT_CONFIG.STATE_COUNT || l->num_paths() < CURRENT_CONFIG.STATE_COUNT) return true;
     }
 
-    if(SYMBOL_DISTRIBUTIONS){
+    if(CURRENT_CONFIG.SYMBOL_DISTRIBUTIONS){
         if(!compute_tests(l->get_symbol_counts(), l->num_paths(), l->num_final(), r->get_symbol_counts(), r->num_paths(), r->num_final())){
             inconsistency_found = true; return false;
         }
     }
-    if(TYPE_DISTRIBUTIONS){
+    if(CURRENT_CONFIG.TYPE_DISTRIBUTIONS){
         if(!compute_tests(l->path_counts, l->num_paths(), 0, r->path_counts, r->num_paths(), 0)){
             inconsistency_found = true; return false;
         }

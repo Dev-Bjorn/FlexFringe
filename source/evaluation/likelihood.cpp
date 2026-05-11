@@ -40,9 +40,9 @@ void likelihoodratio::update_likelihood(double left_count, double right_count, d
     if(right_count != 0.0 && left_count != 0.0)
         extra_parameters = extra_parameters + 1;
 
-    if (left_count >= SYMBOL_COUNT && right_count >= SYMBOL_COUNT){
-        left_count += CORRECTION;
-        right_count += CORRECTION;
+    if (left_count >= CURRENT_CONFIG.SYMBOL_COUNT && right_count >= CURRENT_CONFIG.SYMBOL_COUNT){
+        left_count += CURRENT_CONFIG.CORRECTION;
+        right_count += CURRENT_CONFIG.CORRECTION;
 
         if(left_count != 0.0)
             loglikelihood_orig += (left_count)  * log((left_count)  / left_divider);
@@ -61,9 +61,9 @@ void likelihoodratio::update_likelihood_pool(double left_count, double right_cou
     if(right_count != 0.0 && left_count != 0.0)
         extra_parameters = extra_parameters + 1;
 
-    if (left_count >= SYMBOL_COUNT || right_count >= SYMBOL_COUNT){
-        left_count += CORRECTION;
-        right_count += CORRECTION;
+    if (left_count >= CURRENT_CONFIG.SYMBOL_COUNT || right_count >= CURRENT_CONFIG.SYMBOL_COUNT){
+        left_count += CURRENT_CONFIG.CORRECTION;
+        right_count += CURRENT_CONFIG.CORRECTION;
 
         if(left_count != 0.0)
             loglikelihood_orig += (left_count)  * log((left_count)  / left_divider);
@@ -86,10 +86,10 @@ void likelihoodratio::update_score(state_merger *merger, apta_node* left, apta_n
     int temp_extra_parameters = extra_parameters;
 
     /* we ignore low frequency states, decided by input parameter STATE_COUNT */
-    if(FINAL_PROBABILITIES) {
-        if (r->num_paths() + r->num_final() < STATE_COUNT || l->num_paths() + l->num_final() < STATE_COUNT) return;
+    if(CURRENT_CONFIG.FINAL_PROBABILITIES) {
+        if (r->num_paths() + r->num_final() < CURRENT_CONFIG.STATE_COUNT || l->num_paths() + l->num_final() < CURRENT_CONFIG.STATE_COUNT) return;
     } else {
-        if(r->num_paths() < STATE_COUNT || l->num_paths() < STATE_COUNT) return;
+        if(r->num_paths() < CURRENT_CONFIG.STATE_COUNT || l->num_paths() < CURRENT_CONFIG.STATE_COUNT) return;
     }
 
         /* computing the dividers (denominator) */
@@ -119,7 +119,7 @@ void likelihoodratio::update_score(state_merger *merger, apta_node* left, apta_n
         r2_pool += r->num_paths() - matching_right;
 
         /* optionally add final probabilities (input parameter) */
-        if (FINAL_PROBABILITIES) {
+        if (CURRENT_CONFIG.FINAL_PROBABILITIES) {
             double left_count = l->num_final();
             double right_count = r->num_final();
 
@@ -131,7 +131,7 @@ void likelihoodratio::update_score(state_merger *merger, apta_node* left, apta_n
         update_divider_pool(l1_pool, r1_pool, left_divider, right_divider);
         update_divider_pool(l2_pool, r2_pool, left_divider, right_divider);
 
-        if(left_divider < STATE_COUNT || right_divider < STATE_COUNT) return;
+        if(left_divider < CURRENT_CONFIG.STATE_COUNT || right_divider < CURRENT_CONFIG.STATE_COUNT) return;
 
         /* now we have the dividers and pools, we compute the likelihoods */
         for (num_map::iterator it = l->symbol_counts.begin(); it != l->symbol_counts.end(); ++it) {
@@ -142,7 +142,7 @@ void likelihoodratio::update_score(state_merger *merger, apta_node* left, apta_n
             update_likelihood(left_count, right_count, left_divider, right_divider);
         }
         /* and final probabilities */
-        if (FINAL_PROBABILITIES) update_likelihood(l->num_final(), r->num_final(), left_divider, right_divider);
+        if (CURRENT_CONFIG.FINAL_PROBABILITIES) update_likelihood(l->num_final(), r->num_final(), left_divider, right_divider);
         /* count the pools */
         update_likelihood_pool(l1_pool, r1_pool, left_divider, right_divider);
         update_likelihood_pool(l2_pool, r2_pool, left_divider, right_divider);
@@ -176,7 +176,7 @@ bool likelihoodratio::compute_consistency(state_merger *merger, apta_node* left,
     double test_statistic = 2.0 * (loglikelihood_orig - loglikelihood_merged);
     double p_value = 1.0 - stats::pchisq(test_statistic, extra_parameters, false);
 
-    if (p_value < CHECK_PARAMETER) { return false; }
+    if (p_value < CURRENT_CONFIG.CHECK_PARAMETER) { return false; }
 
     if (inconsistency_found) return false;
 
@@ -194,9 +194,9 @@ bool likelihoodratio::split_compute_consistency(state_merger *, apta_node* left,
     double test_statistic = 2.0 * (loglikelihood_orig - loglikelihood_merged);
     double p_value = 1.0 - stats::pchisq(test_statistic, extra_parameters, false);
 
-    if(left->get_size() <= STATE_COUNT || right->get_size() <= STATE_COUNT) return false;
-    if(USE_SINKS && (left->get_size() <= SINK_COUNT || right->get_size() <= SINK_COUNT)) return false;
-    if (p_value > CHECK_PARAMETER) return false;
+    if(left->get_size() <= CURRENT_CONFIG.STATE_COUNT || right->get_size() <= CURRENT_CONFIG.STATE_COUNT) return false;
+    if(CURRENT_CONFIG.USE_SINKS && (left->get_size() <= CURRENT_CONFIG.SINK_COUNT || right->get_size() <= CURRENT_CONFIG.SINK_COUNT)) return false;
+    if (p_value > CURRENT_CONFIG.CHECK_PARAMETER) return false;
 
     if (inconsistency_found) return false;
 
@@ -207,7 +207,7 @@ double likelihoodratio::split_compute_score(state_merger *, apta_node* left, apt
     double test_statistic = 2.0 * (loglikelihood_orig - loglikelihood_merged);
     double p_value = 1.0 - stats::pchisq(test_statistic, extra_parameters, false);
 
-    return 1.0 + CHECK_PARAMETER - p_value;
+    return 1.0 + CURRENT_CONFIG.CHECK_PARAMETER - p_value;
 };
 
 void likelihoodratio::reset(state_merger *merger){
@@ -229,7 +229,7 @@ double likelihoodratio::compute_global_score(state_merger* m) {
                 double count = it->second;
                 divider += count;
             }
-            if(FINAL_PROBABILITIES) divider += lldat->num_final();
+            if(CURRENT_CONFIG.FINAL_PROBABILITIES) divider += lldat->num_final();
             if(divider == 0) continue;
 
             for (num_map::iterator it = lldat->symbol_counts.begin(); it != lldat->symbol_counts.end(); ++it) {
@@ -239,7 +239,7 @@ double likelihoodratio::compute_global_score(state_merger* m) {
                 likelihood += count * log(count / divider);
                 parameters += 1.0;
             }
-            if(FINAL_PROBABILITIES){
+            if(CURRENT_CONFIG.FINAL_PROBABILITIES){
                 double count = lldat->num_final();
                 if(count != 0){
                     likelihood += count * log(count / divider);
@@ -261,7 +261,7 @@ double likelihoodratio::compute_partial_score(state_merger* m) {
                 double count = it->second;
                 divider += count;
             }
-            if(FINAL_PROBABILITIES) divider += lldat->num_final();
+            if(CURRENT_CONFIG.FINAL_PROBABILITIES) divider += lldat->num_final();
             if(divider == 0) continue;
 
             for (num_map::iterator it = lldat->symbol_counts.begin(); it != lldat->symbol_counts.end(); ++it) {
@@ -271,7 +271,7 @@ double likelihoodratio::compute_partial_score(state_merger* m) {
                 likelihood += count * log(count / divider);
                 parameters += 1.0;
             }
-            if(FINAL_PROBABILITIES){
+            if(CURRENT_CONFIG.FINAL_PROBABILITIES){
                 double count = lldat->num_final();
                 if(count != 0){
                     likelihood += count * log(count / divider);

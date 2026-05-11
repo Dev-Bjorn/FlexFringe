@@ -140,10 +140,9 @@ public:
 
 class merged_APTA_iterator_func : public merged_APTA_iterator {
 public:
-    
-    bool(*check_function)(apta_node*);
+    std::function<bool(apta_node*)> check_function;
 
-    merged_APTA_iterator_func(apta_node* start, bool(*)(apta_node*));
+    merged_APTA_iterator_func(apta_node* start, std::function<bool(apta_node*)> node_check);
 
     virtual void increment();
 };
@@ -177,21 +176,18 @@ typedef std::set<apta_node*, size_compare> state_set;
  */
 
 class apta{
-    state_merger* merger; /**< merger context for convenience */
     apta_node* root; /**< root of the tree */
 
 public:
     apta_node* get_root() const { return root; }
-    state_merger* get_context() const { return merger; }
 
     apta();
     ~apta();
 
-    void set_context(state_merger* m){ merger = m; }
 
     /** reading and writing an apta to and from file */
-    void print_dot(std::iostream& output);
-    void print_json(std::iostream& output);
+    void print_dot(std::iostream &output);
+    void print_json(std::iostream &outio);
     void read_json(std::istream &input_stream);
     void print_sinks_json(std::iostream &output);
 
@@ -262,14 +258,14 @@ class apta_node{
 
     /** extra information for merging heuristics and consistency checks
      * gets overloaded with evaluation functions such as Alergia, EDSM, ... */
-    evaluation_data* data;
+    std::unordered_map<std::string, evaluation_data*> data;
 
 public:
     trace* get_access_trace(){ return access_trace; }
     apta_node* get_source(){ return source; }
     apta_node* get_merged_head(){ return representative_of; }
     apta_node* get_next_merged(){ return next_merged_node; }
-    evaluation_data* get_data(){ return data; }
+    evaluation_data* get_data() const { return data.at(CURRENT_CONFIG.CONFIG_NAME); }
     int get_number(){ return number; }
     int get_size(){ return size; }
     int get_final(){ return final; }
@@ -383,11 +379,11 @@ public:
     }
     bool is_sink() const{
         if(sink != -1) return true;
-        return data->sink_type() != -1;
+        return get_data()->sink_type() != -1;
     }
     int sink_type() const{
         if(sink != -1) return sink;
-        return data->sink_type();
+        return get_data()->sink_type();
     }
 
     /** constructors and intializers */
@@ -396,9 +392,9 @@ public:
     void initialize(apta_node* n);
 
     /** print to json output, use later in predict functions */
-    void print_json(json &output);
+    void print_json(json &nodes);
     void print_json_transitions(json &output);
-    void print_dot(std::iostream& output);
+    void print_dot(std::iostream &output);
 
     /** below are functions use by special heuristics/settings and output printing */
     friend class apta;
@@ -420,7 +416,7 @@ struct size_compare
 {
     bool operator()(apta_node* left, apta_node* right) const
     {
-        if(DEPTH_FIRST){
+        if(CURRENT_CONFIG.DEPTH_FIRST){
             if(left->get_depth() > right->get_depth())
                 return 1;
             if(left->get_depth() < right->get_depth())

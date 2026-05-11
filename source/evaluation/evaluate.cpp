@@ -411,23 +411,23 @@ void evaluation_function::initialize_before_adding_traces(){
  *								*/
 bool is_low_count_sink(apta_node* node){
     node = node->find();
-    return node->get_size() < SINK_COUNT;
+    return node->get_size() < CURRENT_CONFIG.SINK_COUNT;
 }
 
 int evaluation_data::sink_type(){
-    if(!USE_SINKS) return -1;
-    if(SINK_COUNT > 0 && is_low_count_sink(this->node)) return 0;
+    if(!CURRENT_CONFIG.USE_SINKS) return -1;
+    if(CURRENT_CONFIG.SINK_COUNT > 0 && is_low_count_sink(this->node)) return 0;
     return -1;
 };
 
 bool evaluation_data::sink_consistent(apta_node* node, int type){
-    if(!USE_SINKS) return true;
+    if(!CURRENT_CONFIG.USE_SINKS) return true;
     if(type == 0) return is_low_count_sink(node);
     return true;
 };
 
 int evaluation_data::num_sink_types(){
-    if(!USE_SINKS) return 0;
+    if(!CURRENT_CONFIG.USE_SINKS) return 0;
     return 2;
 };
 

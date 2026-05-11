@@ -232,7 +232,7 @@ double prob_single_parallel(tail* p, tail* t, apta_node* n, double prod_prob, bo
 
     if(t->is_final()){
         if(flag){
-            if(FINAL_PROBABILITIES){
+            if(CURRENT_CONFIG.FINAL_PROBABILITIES){
                 return prod_prob + log(n->get_data()->predict_score(t));
             }
             return prod_prob;
@@ -276,7 +276,7 @@ apta_node* single_step(apta_node* n, tail* t, apta* a){
         t = t->future();
     }
 
-    if(FINAL_PROBABILITIES && t->get_symbol() == -1){
+    if(CURRENT_CONFIG.FINAL_PROBABILITIES && t->get_symbol() == -1){
         score = compute_score(n, t);
     }
     return score;
@@ -314,7 +314,7 @@ void predict_trace_update_sequences(state_merger* m, tail* t){
         align_sequence.push_back(true);
     }
 
-    if(FINAL_PROBABILITIES && t->get_symbol() == -1){
+    if(CURRENT_CONFIG.FINAL_PROBABILITIES && t->get_symbol() == -1){
         score = compute_score(n, t);
         score_sequence.push_back(score);
         state_sequence.push_back(n->get_number());

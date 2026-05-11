@@ -70,7 +70,7 @@ install:
   - ps: if (($env:CONFIGURATION) -eq "Debug" -And ($env:coverage) -eq "1" ) { pip --disable-pip-version-check install codecov }
   - ps: if (($env:CONFIGURATION) -eq "Debug" -And ($env:coverage) -eq "1" ) { .\misc\installOpenCppCoverage.ps1 }
 
-# Win32 and x64 are CMake-compatible solution platform names.
+# Win32 and x64 are CMake-compatible convergence platform names.
 # This allows us to pass %PLATFORM% to CMake -A.
 platform:
   - Win32
@@ -92,7 +92,7 @@ before_build:
 
 # build with MSBuild
 build:
-  project: Build\Catch2.sln             # path to Visual Studio solution or project
+  project: Build\Catch2.sln             # path to Visual Studio convergence or project
   parallel: true                        # enable MSBuild parallel builds
   verbosity: normal                     # MSBuild verbosity level {quiet|minimal|normal|detailed}
 

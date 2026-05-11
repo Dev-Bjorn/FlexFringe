@@ -295,7 +295,7 @@ int overlap4logs_data::find_end_type(apta_node* node) {
 }
 
 int overlap4logs_data::sink_type(){
-    if(!USE_SINKS) return -1;
+    if(!CURRENT_CONFIG.USE_SINKS) return -1;
 
     overlap4logs_data* l = (overlap4logs_data*) node->get_data();
 
@@ -303,13 +303,13 @@ int overlap4logs_data::sink_type(){
     if (l->num_final() > 0 && l->get_final_type() <= num_sink_types()) return l->get_final_type();
 
     // If we want to consider this as a sink node, make sure it's an unambiguous one
-    if (l->num_paths() > STATE_COUNT) return get_path_type();
+    if (l->num_paths() > CURRENT_CONFIG.STATE_COUNT) return get_path_type();
 
     return -1;
 };
 
 bool overlap4logs_data::sink_consistent(int type){
-    if(!USE_SINKS) return false;
+    if(!CURRENT_CONFIG.USE_SINKS) return false;
 
     overlap4logs_data* l = (overlap4logs_data*) node->get_data();
 
@@ -318,7 +318,7 @@ bool overlap4logs_data::sink_consistent(int type){
         if(t != type) return false;
         return true;
     }
-    if(l->num_paths() > STATE_COUNT){
+    if(l->num_paths() > CURRENT_CONFIG.STATE_COUNT){
         t = l->get_path_type();
         if(t != -1){
             if(t != type) return false;
@@ -329,7 +329,7 @@ bool overlap4logs_data::sink_consistent(int type){
 };
 
 int overlap4logs_data::num_sink_types(){
-    if(!USE_SINKS) return 0;
+    if(!CURRENT_CONFIG.USE_SINKS) return 0;
     return 5;
 };
 

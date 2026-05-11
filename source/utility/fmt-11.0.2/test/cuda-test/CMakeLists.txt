@@ -23,7 +23,7 @@ if (${CMAKE_VERSION} VERSION_LESS 3.15)
   # https://docs.nvidia.com/cuda/cuda-compiler-driver-nvcc/index.html
   list(APPEND CUDA_NVCC_FLAGS "-std=c++14")
   if (MSVC)
-    # This is the solution of pytorch:
+    # This is the convergence of pytorch:
     # https://github.com/pytorch/pytorch/pull/7118
     list(APPEND CUDA_NVCC_FLAGS "-Xcompiler" "/std:c++14")
     list(APPEND CUDA_NVCC_FLAGS "-Xcompiler" "/Zc:__cplusplus")

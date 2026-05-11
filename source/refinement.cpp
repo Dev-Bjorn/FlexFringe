@@ -1,4 +1,3 @@
-#include <queue>
 #include <iostream>
 #include "refinement.h"
 #include "parameters.h"
@@ -30,7 +29,7 @@ merge_refinement::merge_refinement(state_merger* m, double s, apta_node* l, apta
     size = r->get_size();
     refs = 1;
     time = m->get_num_merges();
-    if(RANDOMIZE_SCORES > 0.0) score = score - (score * RANDOMIZE_SCORES * random_double());
+    if(CURRENT_CONFIG.RANDOMIZE_SCORES > 0.0) score = score - (score * CURRENT_CONFIG.RANDOMIZE_SCORES * random_double());
 }
 
 void merge_refinement::initialize(state_merger* m, double s, apta_node* l, apta_node* r){
@@ -44,7 +43,7 @@ void merge_refinement::initialize(state_merger* m, double s, apta_node* l, apta_
     size = r->get_size();
     refs = 1;
     time = m->get_num_merges();
-    if(RANDOMIZE_SCORES > 0.0) score = score - (score * RANDOMIZE_SCORES * random_double());
+    if(CURRENT_CONFIG.RANDOMIZE_SCORES > 0.0) score = score - (score * CURRENT_CONFIG.RANDOMIZE_SCORES * random_double());
 }
 
 split_refinement::split_refinement(state_merger* m, double s, apta_node* r, tail* t, int a){
@@ -57,7 +56,7 @@ split_refinement::split_refinement(state_merger* m, double s, apta_node* r, tail
     size = r->get_size();
     refs = 1;
     time = m->get_num_merges();
-    if(RANDOMIZE_SCORES > 0.0) score = score - (score * RANDOMIZE_SCORES * random_double());
+    if(CURRENT_CONFIG.RANDOMIZE_SCORES > 0.0) score = score - (score * CURRENT_CONFIG.RANDOMIZE_SCORES * random_double());
 }
 
 void split_refinement::initialize(state_merger* m, double s, apta_node* r, tail* t, int a){
@@ -70,18 +69,18 @@ void split_refinement::initialize(state_merger* m, double s, apta_node* r, tail*
     size = r->get_size();
     refs = 1;
     time = m->get_num_merges();
-    if(RANDOMIZE_SCORES > 0.0) score = score - (score * RANDOMIZE_SCORES * random_double());
+    if(CURRENT_CONFIG.RANDOMIZE_SCORES > 0.0) score = score - (score * CURRENT_CONFIG.RANDOMIZE_SCORES * random_double());
 }
 
 extend_refinement::extend_refinement(state_merger* m, apta_node* r){
     red = r;
     red_trace = m->get_trace_from_state(r);
     red_trace->inc_refs();
-    score = EXTEND_SCORE;
+    score = CURRENT_CONFIG.EXTEND_SCORE;
     size = r->get_size();
     refs = 1;
     time = m->get_num_merges();
-    if(RANDOMIZE_SCORES > 0.0) score = score - (score * RANDOMIZE_SCORES * random_double());
+    if(CURRENT_CONFIG.RANDOMIZE_SCORES > 0.0) score = score - (score * CURRENT_CONFIG.RANDOMIZE_SCORES * random_double());
 }
 
 void extend_refinement::initialize(state_merger* m, apta_node* r){
@@ -92,11 +91,11 @@ void extend_refinement::initialize(state_merger* m, apta_node* r){
     size = r->get_size();
     refs = 1;
     time = m->get_num_merges();
-    if(RANDOMIZE_SCORES > 0.0) score = score - (score * RANDOMIZE_SCORES * random_double());
+    if(CURRENT_CONFIG.RANDOMIZE_SCORES > 0.0) score = score - (score * CURRENT_CONFIG.RANDOMIZE_SCORES * random_double());
 }
 
-inline void refinement::print() const{
-    cout << "score " << score << endl;
+inline std::string refinement::to_string() const{
+    return "score " + std::to_string(score);
 };
 
 inline void refinement::print_json(iostream& output) const{
@@ -105,8 +104,8 @@ inline void refinement::print_json(iostream& output) const{
     output << "\t\t]\n";
 };
 
-inline void refinement::print_short() const{
-    cout << score;
+inline std::string refinement::to_short_string() const{
+    return std::to_string(score);
 };
 
 inline void refinement::doref(state_merger* m){
@@ -126,15 +125,15 @@ inline void refinement::increfs(){
 inline void refinement::erase(){
 };
 
-inline void merge_refinement::print() const{
+inline std::string merge_refinement::to_string() const{
     if(STORE_ACCESS_STRINGS)
-        cout << "merge( " << score << " " << red_trace->to_string() << " " << blue_trace->to_string() << " )" << endl;
+        return "merge( " + std::to_string(score) + " " + red_trace->to_string() + " " + blue_trace->to_string() + " )";
     else
-        cout << "merge( " << score << " " << red->get_number() << " " << blue->get_number() << " )" << endl;
+        return "merge( " + std::to_string(score) + " " + std::to_string(red->get_number()) + " " + std::to_string(blue->get_number()) + " )";
 };
 	
-inline void merge_refinement::print_short() const{
-    cout << "m" << score;
+inline std::string merge_refinement::to_short_string() const{
+    return "m" + std::to_string(score);
 };
 
 inline void merge_refinement::print_json(iostream& output) const{
@@ -199,15 +198,15 @@ inline void merge_refinement::erase(){
     if(refs == 0) mem_store::delete_merge_refinement(this);
 };
 
-inline void split_refinement::print() const{
+inline std::string split_refinement::to_string() const{
     if(STORE_ACCESS_STRINGS)
-        cout << "split( " << score << " q:" << red_trace->to_string() << " s:" << split_point->to_string() << " a:" << attribute << " )";
+        return "split( " + std::to_string(score) + " q:" + red_trace->to_string() + " s:" + split_point->to_string() + " a:" + std::to_string(attribute) + " )";
     else
-        cout << "split( " << score << " q:" << red->get_number() << " s:" << split_point->to_string() << " a:" << attribute << " )";
+        return "split( " + std::to_string(score) + " q:" + std::to_string(red->get_number()) + " s:" + split_point->to_string() + " a:" + std::to_string(attribute) + " )";
 };
 	
-inline void split_refinement::print_short() const{
-    cout << "s" << score;
+inline std::string split_refinement::to_short_string() const{
+    return "s" + std::to_string(score);
 };
 
 inline void split_refinement::print_json(iostream& output) const{
@@ -259,15 +258,15 @@ inline void split_refinement::erase(){
     if(refs == 0) mem_store::delete_split_refinement(this);
 };
 
-inline void extend_refinement::print() const{
+inline std::string extend_refinement::to_string() const{
     if(STORE_ACCESS_STRINGS)
-        cout << "extend( " << score << " " << red_trace->to_string() << " )" << endl;
+        return "extend( " + std::to_string(score) + " " + red_trace->to_string() + " )";
     else
-        cout << "extend( " << score << " " << red->get_number() << " )" << endl;
+        return "extend( " + std::to_string(score) + " " + std::to_string(red->get_number()) + " )";
 };
 	
-inline void extend_refinement::print_short() const{
-    cout << "x" << size;
+inline std::string extend_refinement::to_short_string() const{
+    return "x" + std::to_string(size);
 };
 
 inline void extend_refinement::print_json(iostream& output) const{

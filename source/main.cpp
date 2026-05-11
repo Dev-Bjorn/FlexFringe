@@ -7,8 +7,13 @@
 #include "evaluate.h"
 #include "dfasat.h"
 #include <iostream>
+#include <Printer.hpp>
+#include <ranges>
+
 #include "evaluation_factory.h"
 #include <string>
+#include <mcts/Runner.h>
+
 #include "stream.h"
 #include "interactive.h"
 #include "searcher.h"
@@ -36,33 +41,7 @@ bool debugging_enabled = false;
  * Input parameters, see 'man popt'
  */
 
-void print_current_automaton(state_merger* merger, const std::string& output_file, const std::string& append_string){
-    if (OUTPUT_TYPE == "dot" || OUTPUT_TYPE == "both") {
-        merger->print_dot(output_file + append_string + ".dot");
-    }
-    if (OUTPUT_TYPE == "json" || OUTPUT_TYPE == "both") {
-        merger->print_json(output_file + append_string + ".json");
-    }
-    if(OUTPUT_SINKS && !PRINT_WHITE){
-        bool red_undo = PRINT_RED;
-        PRINT_RED = false;
-        bool white_undo = PRINT_WHITE;
-        PRINT_WHITE= true;
-        bool blue_undo = PRINT_BLUE;
-        PRINT_BLUE = true;
-        if (OUTPUT_TYPE == "dot" || OUTPUT_TYPE == "both") {
-            merger->print_dot(output_file + append_string + "sinks.dot");
-        }
-        if (OUTPUT_TYPE == "json" || OUTPUT_TYPE == "both") {
-            merger->print_json(output_file + append_string + "sinks.json");
-        }
-        PRINT_RED = red_undo;
-        PRINT_WHITE = white_undo;
-        PRINT_BLUE = blue_undo;
-    }
-}
-
-evaluation_function* get_evaluation(){
+evaluation_function* get_evaluation(std::string heuristic_name){
     evaluation_function *eval = nullptr;
     if(debugging_enabled){
         for(auto & myit : *DerivedRegister<evaluation_function>::getMap()) {
@@ -70,9 +49,9 @@ evaluation_function* get_evaluation(){
         }
     }
     try {
-        eval = (DerivedRegister<evaluation_function>::getMap())->at(HEURISTIC_NAME)();
-        std::cout << "Using heuristic " << HEURISTIC_NAME << std::endl;
-        LOG_S(INFO) <<  "Using heuristic " << HEURISTIC_NAME;
+        eval = (DerivedRegister<evaluation_function>::getMap())->at(heuristic_name)();
+        std::cout << "Using heuristic " << heuristic_name << std::endl;
+        LOG_S(INFO) <<  "Using heuristic " << heuristic_name;
     } catch(const std::out_of_range& oor ) {
         LOG_S(WARNING) << "No named heuristic found, defaulting back on -h flag";
         std::cerr << "No named heuristic found, defaulting back on -h flag" << std::endl;
@@ -113,18 +92,58 @@ void read_input_file(inputdata* id) {
     }
 }
 
+void runMCTS(inputdata& id, std::unordered_map<std::string, evaluation_function*>& evals) {
+    std::cout << "MCTS mode selected" << std::endl;
+
+    if(OUTPUT_FILE.empty()) OUTPUT_FILE = INPUT_FILE + ".ff";
+
+    apta* the_apta = new apta();
+    std::unordered_map<std::string, std::tuple<state_merger*, evaluation_function*>> merger_evals{};
+
+
+    std::cout << "Creating apta and state mergers." << std::endl;
+    for (auto& [key, eval] : evals) {
+        if (!ACTIVE_HEURISTICS.contains(key)) continue;
+        state_merger* merger = new state_merger(&id, eval, the_apta);
+        eval->set_context(merger);
+        merger_evals[key] = std::make_tuple(merger, eval);
+    }
+
+    for (auto& [k, eval] : evals) {
+        if (!ACTIVE_HEURISTICS.contains(k)) continue;
+        CURRENT_CONFIG = getConfiguration(k);
+        eval->initialize_before_adding_traces();
+    }
+    id.add_traces_to_apta(the_apta);
+    for (auto [k, v] : merger_evals) {
+        if (!ACTIVE_HEURISTICS.contains(k)) continue;
+        auto [merger, eval] = v;
+        CURRENT_CONFIG = getConfiguration(k);
+        eval->initialize_after_adding_traces(merger);
+    }
+
+    runMCTS(merger_evals);
+
+    // clean up
+    for (auto [merger, eval] : merger_evals | std::views::values) {
+        delete merger;
+        delete eval;
+    }
+
+    delete the_apta;
+}
+
 /**
  * @brief Main run method. Branches out based on the type of session to run.
- * 
- * Possible sessions: 
+ *
+ * Possible sessions:
  * - batch
- * - stream 
+ * - stream
  * - inter
- * 
- * @param param The parameters. 
+ *
+ * @param param The parameters.
  */
 void run() {
-    evaluation_function *eval = get_evaluation();
 
     if(OUTPUT_FILE.empty()) OUTPUT_FILE = INPUT_FILE + ".ff";
 
@@ -135,12 +154,22 @@ void run() {
         read_input_file(&id);
     }
 
+    if (OPERATION_MODE == "mcts") {
+        std::unordered_map<std::string, evaluation_function*> evals;
+        for (const auto& cfg : HEURISTIC_CONFIGS) {
+            evals[cfg.CONFIG_NAME] = get_evaluation(cfg.HEURISTIC_NAME);
+        }
+        runMCTS(id, evals);
+
+        return;
+    }
+
     apta* the_apta = new apta();
+    evaluation_function *eval = get_evaluation(CURRENT_CONFIG.HEURISTIC_NAME);
     auto* merger = new state_merger(&id, eval, the_apta);
-    the_apta->set_context(merger);
     eval->set_context(merger);
 
-    std::cout << "Creating apta " <<  "using evaluation class " << HEURISTIC_NAME << std::endl;
+    std::cout << "Creating apta " <<  "using evaluation class " << CURRENT_CONFIG.HEURISTIC_NAME << std::endl;
 
     if(OPERATION_MODE == "batch" || OPERATION_MODE == "greedy") {
         std::cout << "batch mode selected" << std::endl;
@@ -255,7 +284,7 @@ void run() {
         std::cout << "behavioral differencing mode selected" << std::endl;
         LOG_S(INFO) << "Diff mode selected, starting run";
 
-        if(!APTA_FILE.empty() && !APTA_FILE.empty()){
+        if(!APTA_FILE.empty() && !APTA_FILE2.empty()){
             std::ifstream input_apta_stream(APTA_FILE);
             std::cerr << "reading apta file - " << APTA_FILE << std::endl;
             the_apta->read_json(input_apta_stream);
@@ -281,9 +310,9 @@ void run() {
 }
 
 /**
- * @brief Main method. Reads in arguments and starts application 
+ * @brief Main method. Reads in arguments and starts application
  * by running "run()" function with the set of parsed parameters.
- * 
+ *
  */
 #ifndef UNIT_TESTING
 int main(int argc, char *argv[]){
@@ -306,19 +335,21 @@ int main(int argc, char *argv[]){
                  "Copyright 2015 Sicco Verwer and Marijn Heule, Delft University of Technology."
     };
 
-    // remove -h short-form from help because for backward-compatibility --heuristic needs nit
+    std::vector<std::string> active_heuristics;
+
+    // remove -h short-form from help because for backward-compatibility --heuristic needs it
     app.set_help_flag("--help", "Print this help message and exit");
 
     // read parameters from ini file if desired
     std::string default_file_name = "flexfringe.ini";
+    app.set_config("--ini", default_file_name, "Read an ini file", false);
     app.add_option("tracefile", INPUT_FILE, "Name of the input file containing the traces, either in Abbadingo or JSON format.")->required();
     app.add_option("--outputfile", OUTPUT_FILE, "The prefix of the output file name. Default is same as input.");
     app.add_option("--output", OUTPUT_TYPE, "Switch between output in dot, json, or both (default) formats.");
     app.add_option("--logpath", LOG_PATH, "The path to write the flexfringe log file to. Defaults to \"flexfringe.log\"");
-    app.set_config("--ini", default_file_name, "Read an ini file", false);
+    app.add_option("--active-heuristics", active_heuristics, "Comma-separated list of active heuristics to use during learning. Defaults to all.")->delimiter(',');
+
     app.add_option("--mode", OPERATION_MODE, "batch (default), interactive, or stream depending on the mode of operation.");
-    app.add_option("--heuristic-name,--heuristic_name", HEURISTIC_NAME, "Name of the merge heuristic to use; default count_driven. Use any heuristic in the evaluation directory. It is often beneficial to write your own, as heuristics are very application specific.")->required();
-    app.add_option("--data-name,--data_name", DATA_NAME, "Name of the merge data class to use; default count_data. Use any heuristic in the evaluation directory.");
     app.add_option("--evalpar", EVALUATION_PARAMETERS, "string of key-value pairs for evaluation functions");
 
     app.add_option("--satsolver", SAT_SOLVER, "Name of the SAT solver executable. Default=glucose.");
@@ -327,7 +358,6 @@ int main(int argc, char *argv[]){
 
     app.add_option("--debug", DEBUGGING, "turn on debugging mode, printing includes pointers and find/union structure, more output");
     app.add_option("--addtails", ADD_TAILS, "Add tails to the states, used for splitting nodes. When not needed, it saves space and time to not add them. Default=1.");
-    app.add_option("--random", RANDOMIZE_SCORES, "Amount of randomness r to include in merging heuristic. Each merge score s is modified to (s - s*random(0,r)). Default=0.");
     app.add_option("--runs", ENSEMBLE_RUNS, "Number of greedy runs/iterations; default=1. Advice: when using random greedy, a higher value is recommended (100 was used in Stamina winner).");
     app.add_option("--parentsizethreshold", PARENT_SIZE_THRESHOLD, "The minimum size for a node to be assigned children when reading inputs, subsequent events in longer traces are ignored. Useful for streaming and some evaluation functions. Default=-1.");
     app.add_option("--reversetraces", REVERSE_TRACES, "When set to true, flexfringe starts from a suffix instead of a prefix tree. Default = 0.");
@@ -338,64 +368,19 @@ int main(int argc, char *argv[]){
     app.add_option("--swaddshorter", SLIDING_WINDOW_ADD_SHORTER, "Whether sliding windows shorter than swsize should be added to the apta. Default = 0.");
     app.add_option("--redbluethreshold", RED_BLUE_THRESHOLD, "Boolean. If set to 1, then states will only be appended to red- or blue states. Only makes sense in stream mode. Default=0.");
 
-    app.add_option("--extend", EXTEND_ANY_RED, "When set to 1, any merge candidate (blue) that cannot be merged with any target (red) is immediately changed into a (red) target; default=1. If set to 0, a merge candidate is only changed into a target when no more merges are possible. Advice: unclear which strategy is best, when using statistical (or count-based) consistency checks, keep in mind that merge consistency between states may change due to other performed merges. This will especially influence low frequency states. When there are a lot of those, we therefore recommend setting x=0.");
-    app.add_option("--shallowfirst", DEPTH_FIRST, "When set to 1, the ordering of the nodes is changed from most frequent first (default) to most shallow (smallest depth) first; default=0. Advice: use depth-first when learning from characteristic samples.");
-    app.add_option("--largestblue", MERGE_MOST_VISITED, "When set to 1, the algorithm only tries to merge the most frequent (or most shallow if w=1) candidate (blue) states with any target (red) state, instead of all candidates; default=0. Advice: this reduces run-time significantly but comes with a potential decrease in merge quality");
-    app.add_option("--blueblue", MERGE_BLUE_BLUE, "When set to 1, the algorithm tries to merge candidate (blue) states with candidate (blue) states in addition to candidate (blue) target (red) merges; default=0. Advice: this adds run-time to the merging process in exchange for potential improvement in merge quality.");
-    app.add_option("--redfixed", RED_FIXED, "When set to 1, merges that add new transitions to red states are considered inconsistent. Merges with red states will also not modify any of the counts used in evaluation functions. Once a red state has been learned, it is considered final and unmodifiable; default=0. Advice: setting this to 1 frequently results in easier to visualize and more insightful models.");
-    app.add_option("--allfixed", ALL_FIXED, "When set to 1, merges that add new transitions to any state are considered inconsistent. Merges with red states will also not modify any of the counts used in evaluation functions. Default=0. Advice: setting this to 1 leads to insightful but large models.");
-    app.add_option("--ktail", KTAIL, "k-Tails (speedup parameter), only testing merges until depth k (although original ktails can produce non-deterministic machines, flexfringe cannot, it is purely for speedup). Default=-1");
-    app.add_option("--origktail", IDENTICAL_KTAIL, "Original k-Tails, requires merged states to have identical suffixes (future paths) up to depth k. (although original ktails can produce non-deterministic machines, flexfringe cannot). Default=-1.");
-    app.add_option("--kstate", KSTATE, "k-Tails for states (speedup parameter), only testing merges until states of size k. Default=-1.");
-    app.add_option("--mergelocal", MERGE_LOCAL, "only perform local merges, up to APTA distance k, useful when learning from software data.");
-    app.add_option("--mcollector", MERGE_LOCAL_COLLECTOR_COUNT, "when local merges are used, allow merges with non-local collector states, these are states with at least k input transitions.");
-    app.add_option("--markovian", MARKOVIAN_MODEL, "learn a \"Markovian\" model that ensures the incoming transitions have the same label, resulting in a Markov graph (states correspond to a unique label, but the same label can occur in multiple places), any heuristic can be used. (default: 0)");
-    app.add_option("--mergeroot", MERGE_ROOT, "Allow merges with the root? Default: 1 (true).");
-    app.add_option("--testmerge", MERGE_WHEN_TESTING, "When set to 0, merge tries in order to compute the evaluation scores do not actually perform the merges themselves. Thus the consistency and score evaluation for states in merges that add recursive loops are uninfluenced by earlier merges; default=1. Advice: setting this to 0 reduces run-time and can be useful when learning models using statistical evaluation functions, but can lead to inconsistencies when learning from labeled data.");
-    app.add_option("--mergedata", MERGE_DATA, "Whether to update data during the merging process (1) or keep the counts from the prefix tree intact (0). Default=1.");
-
-    app.add_option("--sinkson", USE_SINKS, "Set to 1 to use sink states; default=1. Advice: leads to much more concise and easier to visualize models, but can cost predictive performance depending on the sink definitions.");
-    app.add_option("--sinkcount", SINK_COUNT, "The maximum number of occurrences of a state for it to be a low count sink (see evaluation functions); default=10.");
-    app.add_option("--mergesinks", MERGE_SINKS, "Whether to merge sinks with other sink nodes after the main merging process. default=0.");
-    app.add_option("--mergesinkscore", MERGE_SINKS_WITH_CORE, "Whether to merge sinks with the red core (any other state) after the main merging process. default=0.");
-    app.add_option("--satmergesinks", MERGE_SINKS_PRESOLVE, "Merge all sink nodes of the same type before sending the problem to the SAT solver (setting 0 or 1); default=1. Advice: radically improves runtime, only set to 0 when sinks of the same type can be different states in the final model.");
     app.add_option("--searchsinks", SEARCH_SINKS, "Start search process once all remaining blue states are sink nodes, use greedy before. Only valid for search strategies. Default 0 (false).");
-    app.add_option("--sinkidentical", MERGE_IDENTICAL_SINKS, "Only merge sinks if they have identical suffixes. Default=0.");
-    app.add_option("--convertsinks", CONVERT_SINK_STATES, "Instead of merging sinks, convert them to their form defined by the evaluation function (typically a garbage state). Default 0 (false).");
-    app.add_option("--extendsinks", EXTEND_SINKS, "Only relevant when mergesinks is set to 1. When set to 1, sinks can be extended (aka, added to the core, colored red). When set to 0, all sinks will be merged with the current core. Default=1.");
+    app.add_option("--satmergesinks", MERGE_SINKS_PRESOLVE, "Merge all sink nodes of the same type before sending the problem to the SAT solver (setting 0 or 1); default=1. Advice: radically improves runtime, only set to 0 when sinks of the same type can be different states in the final model.");
 
-    app.add_option("--finalprob", FINAL_PROBABILITIES, "model final probabilities? if set to 1, distributions are over Sigma*, otherwise over SigmaN. (default: 0)");
-    app.add_option("--lowerbound", USE_LOWER_BOUND, "Does the merger use a minimum value of the heuristic function? Set using --lowerboundval. Default=0. Advice: state merging is forced to perform the merge with best heuristic value, it can sometimes be better to color a state red rather then performing a bad merge. This is achieved using a positive lower bound value. Models learned with positive lower bound are frequently more interpretable");
-    app.add_option("--lowerboundval", LOWER_BOUND, "Minimum value of the heuristic function, smaller values are treated as inconsistent. Default=0. Advice: state merging is forced to perform the merge with best heuristic value, it can sometimes be better to color a state red rather then performing a bad merge. This is achieved using a positive lower bound value. Models learned with positive lower bound are frequently more interpretable");
-    app.add_option("--extendscore", EXTEND_SCORE, "The score for an extend (not merge or split) refinement. Set this higher or equal to lowerboundval. Default=0.");
-    app.add_option("--state_count", STATE_COUNT, "The minimum number of positive occurrences of a state for it to be included in overlap/statistical checks (see evaluation functions); default=25. Advice: low frequency states can have an undesired influence on statistical tests, set to at least 10. Note that different evaluation functions can use this parameter in different ways.");
-    app.add_option("--symbol_count", SYMBOL_COUNT, "When set to 1, merge tries in order to compute the evaluation scores do not actually perform the merges themselves. Thus the consistency and score evaluation for states in merges that add recursive loops are uninfluenced by earlier merges; default=0. Advice: setting this to 1 reduces run-time and can be useful when learning models using statistical evaluation functions, but can lead to inconsistencies when learning from labeled data.");
-    app.add_option("--correction", CORRECTION, "Value of a Laplace correction (smoothing) added to all symbol counts when computing statistical tests (in ALERGIA, LIKELIHOODRATIO, AIC, and KULLBACK-LEIBLER); default=0.0. Advice: unclear whether smoothing is needed for the different tests, more smoothing typically leads to smaller models.");
-    app.add_option("--correction_seen", CORRECTION_SEEN, "Additional correction applied to seen values.");
-    app.add_option("--correction_unseen", CORRECTION_UNSEEN, "Additional correction applied to unseen values.");
-    app.add_option("--correction_per_seen", CORRECTION_PER_SEEN, "Additional correction, adds this correction to counts per seen value to both seen and unseen values.");
-    app.add_option("--confidence_bound", CHECK_PARAMETER, "Extra parameter used during statistical tests, the significance level for the likelihood ratio test, the alpha value for ALERGIA; default=0.5. Advice: look up the statistical test performed, this parameter is not always the same as a p-value.");
-    app.add_option("--typedist", TYPE_DISTRIBUTIONS, "Whether to perform tests on the type distributions of states. Default = 0.");
-    app.add_option("--symboldist", SYMBOL_DISTRIBUTIONS, "Whether to perform tests on the symbol distributions of states. Default = 1.");
-    app.add_option("--typeconsistent", TYPE_CONSISTENT, "Whether to enforce type consistency for states, i.e., to not merge positive states with negative ones. Default=1.");
-
-    app.add_option("--satoffset", OFFSET, "DFASAT runs a SAT solver to find a solution of size at most the size of the partially learned DFA + E; default=5. Advice: larger values greatly increases run-time. Setting it to 0 is frequently sufficient (when the merge heuristic works well).");
-    app.add_option("--satplus", EXTRA_STATES, "With every iteration, DFASAT tries to find solutions of size at most the best solution found + P, default=0. Advice: current setting only searches for better solutions. If a few extra states is OK, set it higher.");
+    app.add_option("--satoffset", OFFSET, "DFASAT runs a SAT solver to find a convergence of size at most the size of the partially learned DFA + E; default=5. Advice: larger values greatly increases run-time. Setting it to 0 is frequently sufficient (when the merge heuristic works well).");
+    app.add_option("--satplus", EXTRA_STATES, "With every iteration, DFASAT tries to find solutions of size at most the best convergence found + P, default=0. Advice: current setting only searches for better solutions. If a few extra states is OK, set it higher.");
     app.add_option("--satfinalred", TARGET_REJECTING, "Make all transitions from red states without any occurrences force to have 0 occurrences (similar to targeting a rejecting sink), (setting 0 or 1) before sending the problem to the SAT solver; default=0. Advice: the same as finalred but for the SAT solver. Setting it to 1 greatly improves solving speed.");
     app.add_option("--symmetry", SYMMETRY_BREAKING, "Add symmetry breaking predicates to the SAT encoding (setting 0 or 1), based on Ulyantsev et al. BFS symmetry breaking; default=1. Advice: in our experience this only improves solving speed.");
     app.add_option("--forcing", FORCING, "Add predicates to the SAT encoding that force transitions in the learned DFA to be used by input examples (setting 0 or 1); default=0. Advice: leads to non-complete models. When the data is sparse, this should be set to 1. It does make the instance larger and can have a negative effect on the solving time.");
     app.add_option("--satgreedy", SAT_RUN_GREEDY, "Run the greedy process before starting the SAT solver, default=0.");
-    app.add_option("--aptabound", APTA_SIZE_BOUND, "Lower bound on the APTA (entire data tree) size. When reached by greedy, no more merges will be performed. Default=0.");
-    app.add_option("--dfabound", DFA_SIZE_BOUND, "Upper bound on the Automaton (only red states) size. When reached by greedy, no more merges will be performed. Default=0.");
 
     app.add_option("--printblue", PRINT_BLUE, "Print blue states in the .dot file? Default 1 (true).");
     app.add_option("--printwhite", PRINT_WHITE, "Print white states in the .dot file? These are typically sinks states, i.e., states that have not been considered for merging. Default 0 (false).");
     app.add_option("--outputsinks", OUTPUT_SINKS, "Print sink states and transition in a separate json file. Default 0 (false).");
-
-    app.add_option("--depthcheck", PERFORM_DEPTH_CHECK, "In addition to standard state merging checks, perform a check layer-by-layer in the prefix tree. This is a try to get more information out of infrequent traces and aims to capture long-term dependencies. Default=0.");
-    app.add_option("--symbolcheck", PERFORM_SYMBOL_CHECK, "In addition to standard state merging checks, perform a check symbol-by-symbol in the prefix tree. This is a try to get more information out of infrequent traces and aims to capture long-term dependencies. Default=0.");
-    app.add_option("--depthcheckmaxdepth", DEPTH_CHECK_MAX_DEPTH, "In case of performing depth or symbol checks, this parameter gives the maximum depth to compute these tests for. Default=-1 (bounded by the prefix tree).");
-    app.add_option("--mergecheck", PERFORM_MERGE_CHECK, "Perform the standard merge check from the core state-merging algorithm. When set to false, all merges evaluate to true except for other constraints such as locality, markovian, etc. Default=1.");
 
     app.add_option("--searchdeep", SEARCH_DEEP, "Search using a greedy call until no more merges can be performed. Default=0.");
     app.add_option("--searchlocal", SEARCH_LOCAL, "Search using the local heuristic from the evaluation function. Default=0.");
@@ -419,14 +404,134 @@ int main(int argc, char *argv[]){
     app.add_option("--diffmaxlength", DIFF_MAX_LENGTH, "The maximum length of traces sampled for differencing. Default=50.");
     app.add_option("--diffmin", DIFF_MIN, "The minimum score for the behavioral difference of a sampled trace. Default=-100.");
 
+
+
+    // MCTS options
+    auto mcts_cmd = app.add_subcommand("mcts", "Add MCTS configuration");
+    mcts_cmd->configurable();
+
+    mcts_cmd->add_option("--convergence-policies", MCTS_CONFIG.CONVERGENCE_POLICIES, "The policies that determine when to stop MCTS.");
+    mcts_cmd->add_option("--max-iterations", MCTS_CONFIG.MAX_ITERATIONS, "Maximum number of iterations, the convergence policies contains 'iteration'. Default: 1000.");
+    mcts_cmd->add_option("--score-threshold", MCTS_CONFIG.SCORE_THRESHOLD, "Score threshold for stopping MCTS, the convergence policies contains 'score-threshold'. Default: 0.0.");
+    mcts_cmd->add_option("--max-no-improvement", MCTS_CONFIG.MAX_NO_IMPROVEMENT, "Maximum number of iterations without improvement, the convergence policies contains 'score-improvement'. Default: 100.");
+
+    mcts_cmd->add_option("--auto-expand-one-child", MCTS_CONFIG.AUTO_EXPAND_ONE_CHILD, "If true, automatically expand one child during rollout. Default: true.");
+    mcts_cmd->add_option("--expansion-action-seed", MCTS_CONFIG.EXPANSION_ACTION_SEED, "Seed for roulette action policy. Default: 42.");
+    mcts_cmd->add_option("--expansion-rule-policy", MCTS_CONFIG.EXPANSION_RULE_POLICY, "The policy that determines whether a node can be expanded for MCTS. Default: full.");
+
+    mcts_cmd->add_option("--max-rollout-steps", MCTS_CONFIG.MAX_ROLLOUT_STEPS, "Maximum number of rollout steps. Default: 1000.");
+    mcts_cmd->add_option("--rollout-action-policy", MCTS_CONFIG.ROLLOUT_ACTION_POLICY, "The policy that determines which action to take during rollout. Default: uniform.");
+    mcts_cmd->add_option("--rollout-action-seed", MCTS_CONFIG.ROLLOUT_ACTION_SEED, "Seed for uniform action policy. Default: 42.");
+
+    mcts_cmd->add_option("--node-selection-policy", MCTS_CONFIG.NODE_SELECTION_POLICY, "Selection policy for MCTS. Default: lcb1.");
+    mcts_cmd->add_option("--selection-search-policy", MCTS_CONFIG.SELECTION_SEARCH_METHOD, "The search method used for node selection. Default: bfs.");
+    mcts_cmd->add_option("--ucb1-constant", MCTS_CONFIG.UCB1_CONSTANT, "UCB1 exploration constant. Default: 1.4142135623730951.");
+    mcts_cmd->add_option("--lcb1-constant", MCTS_CONFIG.LCB1_CONSTANT, "LCB1 exploration constant. Default: 1.4142135623730951.");
+
+    mcts_cmd->add_option("--valuation-policy", MCTS_CONFIG.QUALITY_EVALUATOR_POLICY, "Valuation policy for MCTS. Default: model_size.");
+
+    mcts_cmd->add_option("--print-unvisited", MCTS_CONFIG.PRINT_UNVISITED, "Print unvisited nodes. Default: false.");
+    mcts_cmd->add_option("--print-json-line-sep-between-attr", MCTS_CONFIG.PRINT_JSON_LINE_SEP_BETWEEN_ATTR, "Print JSON line separator between attributes. Default: false.");
+
+    mcts_cmd->add_option("--mcts-heuristic", MCTS_CONFIG.MCTS_HEURISTIC_NAME, "The heuristic config name for MCTS.")->required();
+    mcts_cmd->add_option("--comparison-heuristic", MCTS_CONFIG.COMPARISON_HEURISTIC_NAME, "The heuristic config name for the comparison algorithm.")->required();
+    mcts_cmd->add_option("--comparison-algorithm", MCTS_CONFIG.COMPARISON_ALGORITHM, "The algorithm which will be compared against the MCTS result. Default: greedy");
+
+
+    HeuristicConfig current;
+    auto* hcmd = app.add_subcommand("heuristic", "Add a heuristic configuration");
+    app.needs(hcmd);
+    hcmd->callback([&]() {
+        if (current.CONFIG_NAME.empty()) {
+            current.CONFIG_NAME = current.HEURISTIC_NAME;
+        }
+
+        std::cout << "Adding heuristic: " << current.CONFIG_NAME << std::endl;
+        HEURISTIC_CONFIGS.push_back(current);
+        current = HeuristicConfig{};
+    });
+    hcmd->configurable();
+    hcmd->immediate_callback();
+
+    hcmd->add_option("--name", current.CONFIG_NAME, "The name of the current configuration, if not provided uses the heuristic name.");
+    hcmd->add_option("--heuristic-name,--heuristic_name", current.HEURISTIC_NAME, "Name of the merge heuristic to use; default count_driven. Use any heuristic in the evaluation directory. It is often beneficial to write your own, as heuristics are very application specific.")->required();
+    hcmd->add_option("--data-name,--data_name",current.DATA_NAME, "Name of the merge data class to use; default count_data. Use any heuristic in the evaluation directory.");
+    hcmd->add_option("--random", current.RANDOMIZE_SCORES, "Amount of randomness r to include in merging heuristic. Each merge score s is modified to (s - s*random(0,r)). Default=0.");
+
+    hcmd->add_option("--extend", current.EXTEND_ANY_RED, "When set to 1, any merge candidate (blue) that cannot be merged with any target (red) is immediately changed into a (red) target; default=1. If set to 0, a merge candidate is only changed into a target when no more merges are possible. Advice: unclear which strategy is best, when using statistical (or count-based) consistency checks, keep in mind that merge consistency between states may change due to other performed merges. This will especially influence low frequency states. When there are a lot of those, we therefore recommend setting x=0.");
+    hcmd->add_option("--shallowfirst", current.DEPTH_FIRST, "When set to 1, the ordering of the nodes is changed from most frequent first (default) to most shallow (smallest depth) first; default=0. Advice: use depth-first when learning from characteristic samples.");
+    hcmd->add_option("--largestblue", current.MERGE_MOST_VISITED, "When set to 1, the algorithm only tries to merge the most frequent (or most shallow if w=1) candidate (blue) states with any target (red) state, instead of all candidates; default=0. Advice: this reduces run-time significantly but comes with a potential decrease in merge quality");
+    hcmd->add_option("--blueblue", current.MERGE_BLUE_BLUE, "When set to 1, the algorithm tries to merge candidate (blue) states with candidate (blue) states in addition to candidate (blue) target (red) merges; default=0. Advice: this adds run-time to the merging process in exchange for potential improvement in merge quality.");
+    hcmd->add_option("--redfixed", current.RED_FIXED, "When set to 1, merges that add new transitions to red states are considered inconsistent. Merges with red states will also not modify any of the counts used in evaluation functions. Once a red state has been learned, it is considered final and unmodifiable; default=0. Advice: setting this to 1 frequently results in easier to visualize and more insightful models.");
+    hcmd->add_option("--allfixed", current.ALL_FIXED, "When set to 1, merges that add new transitions to any state are considered inconsistent. Merges with red states will also not modify any of the counts used in evaluation functions. Default=0. Advice: setting this to 1 leads to insightful but large models.");
+    hcmd->add_option("--ktail", current.KTAIL, "k-Tails (speedup parameter), only testing merges until depth k (although original ktails can produce non-deterministic machines, flexfringe cannot, it is purely for speedup). Default=-1");
+    hcmd->add_option("--origktail", current.IDENTICAL_KTAIL, "Original k-Tails, requires merged states to have identical suffixes (future paths) up to depth k. (although original ktails can produce non-deterministic machines, flexfringe cannot). Default=-1.");
+    hcmd->add_option("--kstate", current.KSTATE, "k-Tails for states (speedup parameter), only testing merges until states of size k. Default=-1.");
+    hcmd->add_option("--mergelocal", current.MERGE_LOCAL, "only perform local merges, up to APTA distance k, useful when learning from software data.");
+    hcmd->add_option("--mcollector", current.MERGE_LOCAL_COLLECTOR_COUNT, "when local merges are used, allow merges with non-local collector states, these are states with at least k input transitions.");
+    hcmd->add_option("--markovian", current.MARKOVIAN_MODEL, "learn a \"Markovian\" model that ensures the incoming transitions have the same label, resulting in a Markov graph (states correspond to a unique label, but the same label can occur in multiple places), any heuristic can be used. (default: 0)");
+    hcmd->add_option("--mergeroot", current.MERGE_ROOT, "Allow merges with the root? Default: 1 (true).");
+    hcmd->add_option("--testmerge", current.MERGE_WHEN_TESTING, "When set to 0, merge tries in order to compute the evaluation scores do not actually perform the merges themselves. Thus the consistency and score evaluation for states in merges that add recursive loops are uninfluenced by earlier merges; default=1. Advice: setting this to 0 reduces run-time and can be useful when learning models using statistical evaluation functions, but can lead to inconsistencies when learning from labeled data.");
+    hcmd->add_option("--mergedata", current.MERGE_DATA, "Whether to update data during the merging process (1) or keep the counts from the prefix tree intact (0). Default=1.");
+
+
+    hcmd->add_option("--sinkson", current.USE_SINKS, "Set to 1 to use sink states; default=1. Advice: leads to much more concise and easier to visualize models, but can cost predictive performance depending on the sink definitions.");
+    hcmd->add_option("--sinkcount", current.SINK_COUNT, "The maximum number of occurrences of a state for it to be a low count sink (see evaluation functions); default=10.");
+    hcmd->add_option("--mergesinks", current.MERGE_SINKS, "Whether to merge sinks with other sink nodes after the main merging process. default=0.");
+    hcmd->add_option("--mergesinkscore", current.MERGE_SINKS_WITH_CORE, "Whether to merge sinks with the red core (any other state) after the main merging process. default=0.");
+
+    hcmd->add_option("--sinkidentical", current.MERGE_IDENTICAL_SINKS, "Only merge sinks if they have identical suffixes. Default=0.");
+    hcmd->add_option("--convertsinks", current.CONVERT_SINK_STATES, "Instead of merging sinks, convert them to their form defined by the evaluation function (typically a garbage state). Default 0 (false).");
+    hcmd->add_option("--extendsinks", current.EXTEND_SINKS, "Only relevant when mergesinks is set to 1. When set to 1, sinks can be extended (aka, added to the core, colored red). When set to 0, all sinks will be merged with the current core. Default=1.");
+
+    hcmd->add_option("--finalprob", current.FINAL_PROBABILITIES, "model final probabilities? if set to 1, distributions are over Sigma*, otherwise over SigmaN. (default: 0)");
+    hcmd->add_option("--lowerbound", current.USE_LOWER_BOUND, "Does the merger use a minimum value of the heuristic function? Set using --lowerboundval. Default=0. Advice: state merging is forced to perform the merge with best heuristic value, it can sometimes be better to color a state red rather then performing a bad merge. This is achieved using a positive lower bound value. Models learned with positive lower bound are frequently more interpretable");
+    hcmd->add_option("--lowerboundval", current.LOWER_BOUND, "Minimum value of the heuristic function, smaller values are treated as inconsistent. Default=0. Advice: state merging is forced to perform the merge with best heuristic value, it can sometimes be better to color a state red rather then performing a bad merge. This is achieved using a positive lower bound value. Models learned with positive lower bound are frequently more interpretable");
+    hcmd->add_option("--extendscore", current.EXTEND_SCORE, "The score for an extend (not merge or split) refinement. Set this higher or equal to lowerboundval. Default=0.");
+    hcmd->add_option("--state_count", current.STATE_COUNT, "The minimum number of positive occurrences of a state for it to be included in overlap/statistical checks (see evaluation functions); default=25. Advice: low frequency states can have an undesired influence on statistical tests, set to at least 10. Note that different evaluation functions can use this parameter in different ways.");
+    hcmd->add_option("--symbol_count", current.SYMBOL_COUNT, "When set to 1, merge tries in order to compute the evaluation scores do not actually perform the merges themselves. Thus the consistency and score evaluation for states in merges that add recursive loops are uninfluenced by earlier merges; default=0. Advice: setting this to 1 reduces run-time and can be useful when learning models using statistical evaluation functions, but can lead to inconsistencies when learning from labeled data.");
+    hcmd->add_option("--correction", current.CORRECTION, "Value of a Laplace correction (smoothing) added to all symbol counts when computing statistical tests (in ALERGIA, LIKELIHOODRATIO, AIC, and KULLBACK-LEIBLER); default=0.0. Advice: unclear whether smoothing is needed for the different tests, more smoothing typically leads to smaller models.");
+    hcmd->add_option("--correction_seen", current.CORRECTION_SEEN, "Additional correction applied to seen values.");
+    hcmd->add_option("--correction_unseen", current.CORRECTION_UNSEEN, "Additional correction applied to unseen values.");
+    hcmd->add_option("--correction_per_seen", current.CORRECTION_PER_SEEN, "Additional correction, adds this correction to counts per seen value to both seen and unseen values.");
+    hcmd->add_option("--confidence_bound", current.CHECK_PARAMETER, "Extra parameter used during statistical tests, the significance level for the likelihood ratio test, the alpha value for ALERGIA; default=0.5. Advice: look up the statistical test performed, this parameter is not always the same as a p-value.");
+    hcmd->add_option("--typedist", current.TYPE_DISTRIBUTIONS, "Whether to perform tests on the type distributions of states. Default = 0.");
+    hcmd->add_option("--symboldist", current.SYMBOL_DISTRIBUTIONS, "Whether to perform tests on the symbol distributions of states. Default = 1.");
+    hcmd->add_option("--typeconsistent", current.TYPE_CONSISTENT, "Whether to enforce type consistency for states, i.e., to not merge positive states with negative ones. Default=1.");
+
+    hcmd->add_option("--aptabound", current.APTA_SIZE_BOUND, "Lower bound on the APTA (entire data tree) size. When reached by greedy, no more merges will be performed. Default=0.");
+    hcmd->add_option("--dfabound", current.DFA_SIZE_BOUND, "Upper bound on the Automaton (only red states) size. When reached by greedy, no more merges will be performed. Default=0.");
+
+    hcmd->add_option("--depthcheck", current.PERFORM_DEPTH_CHECK, "In addition to standard state merging checks, perform a check layer-by-layer in the prefix tree. This is a try to get more information out of infrequent traces and aims to capture long-term dependencies. Default=0.");
+    hcmd->add_option("--symbolcheck", current.PERFORM_SYMBOL_CHECK, "In addition to standard state merging checks, perform a check symbol-by-symbol in the prefix tree. This is a try to get more information out of infrequent traces and aims to capture long-term dependencies. Default=0.");
+    hcmd->add_option("--depthcheckmaxdepth", current.DEPTH_CHECK_MAX_DEPTH, "In case of performing depth or symbol checks, this parameter gives the maximum depth to compute these tests for. Default=-1 (bounded by the prefix tree).");
+    hcmd->add_option("--mergecheck", current.PERFORM_MERGE_CHECK, "Perform the standard merge check from the core state-merging algorithm. When set to false, all merges evaluate to true except for other constraints such as locality, markovian, etc. Default=1.");
+
     // parameters specifically for CMS heuristic
-    app.add_option("--numoftables", NROWS_SKETCHES, "Number of rows of sketches upon initialization.");
-    app.add_option("--vectordimension", NCOLUMNS_SKETCHES, "Number of columns of sketches upon initialization.");
-    app.add_option("--distancemetric", DISTANCE_METRIC_SKETCHES, "The distance metric when comparing the sketches. 1 hoeffding-bound and cosine-similarity for score, 2 hoeffding bound in both, 3 like 1 but pooled. Default: 1");
-    app.add_option("--randominitialization", RANDOM_INITIALIZATION_SKETCHES, "If 0 (zero), then initialize CMS deterministically. Elsewise, CMS becomes random. Default: 0.");
-    app.add_option("--futuresteps", NSTEPS_SKETCHES, "Number of steps into future when storing future in sketches. Default: 2.");
+    hcmd->add_option("--numoftables", current.NROWS_SKETCHES, "Number of rows of sketches upon initialization.");
+    hcmd->add_option("--vectordimension", current.NCOLUMNS_SKETCHES, "Number of columns of sketches upon initialization.");
+    hcmd->add_option("--distancemetric", current.DISTANCE_METRIC_SKETCHES, "The distance metric when comparing the sketches. 1 hoeffding-bound and cosine-similarity for score, 2 hoeffding bound in both, 3 like 1 but pooled. Default: 1");
+    hcmd->add_option("--randominitialization", current.RANDOM_INITIALIZATION_SKETCHES, "If 0 (zero), then initialize CMS deterministically. Elsewise, CMS becomes random. Default: 0.");
+    hcmd->add_option("--futuresteps", current.NSTEPS_SKETCHES, "Number of steps into future when storing future in sketches. Default: 2.");
 
     CLI11_PARSE(app, argc, argv)
+
+    if (!HEURISTIC_CONFIGS.empty()) {
+        CURRENT_CONFIG = HEURISTIC_CONFIGS.front();
+    } else {
+        std::cout << "No heuristic configurations found. Please add a heuristic configuration using the --heuristic command." << std::endl;
+        return 1;
+    }
+
+    if (active_heuristics.empty()) {
+        for (auto& h : HEURISTIC_CONFIGS) {
+            ACTIVE_HEURISTICS.insert(h.CONFIG_NAME);
+        }
+    } else {
+        ACTIVE_HEURISTICS = std::unordered_set(active_heuristics.begin(), active_heuristics.end());
+    }
+
+
 
     loguru::g_stderr_verbosity = loguru::Verbosity_OFF;
     loguru::init(argc, argv);
@@ -442,4 +547,6 @@ int main(int argc, char *argv[]){
 
     return 0;
 }
+
+
 #endif

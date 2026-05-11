@@ -10,13 +10,13 @@ REGISTER_DEF_TYPE(aic);
 bool aic::compute_consistency(state_merger *merger, apta_node* left, apta_node* right){
   if (inconsistency_found) return false;
   if (extra_parameters == 0) return false;
-  return 2.0 * ( extra_parameters - (loglikelihood_orig - loglikelihood_merged) ) > CHECK_PARAMETER;
+  return 2.0 * ( extra_parameters - (loglikelihood_orig - loglikelihood_merged) ) > CURRENT_CONFIG.CHECK_PARAMETER;
 };
 
 bool aic::split_compute_consistency(state_merger *, apta_node* left, apta_node* right){
     if (inconsistency_found) return false;
     if (extra_parameters == 0) return false;
-    return 2.0 * ( extra_parameters - (loglikelihood_orig - loglikelihood_merged) ) <= CHECK_PARAMETER;
+    return 2.0 * ( extra_parameters - (loglikelihood_orig - loglikelihood_merged) ) <= CURRENT_CONFIG.CHECK_PARAMETER;
 };
 
 double aic::compute_score(state_merger *merger, apta_node* left, apta_node* right){

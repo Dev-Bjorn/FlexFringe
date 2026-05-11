@@ -25,7 +25,7 @@ private:
 
 public:
   HashFunction() {
-    if(RANDOM_INITIALIZATION_SKETCHES != 0){
+    if(CURRENT_CONFIG.RANDOM_INITIALIZATION_SKETCHES != 0){
       std::default_random_engine generator(static_cast<long unsigned int>(std::chrono::high_resolution_clock::now().time_since_epoch().count()));
       std::uniform_int_distribution<int> equal;
       HashFunction(equal(generator));

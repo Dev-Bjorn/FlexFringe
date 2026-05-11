@@ -1016,7 +1016,7 @@ dfasat::dfasat(state_merger* m, int best_solution){
         dfa_size = red_states->size() + OFFSET;
 
     sinks_size = 0;
-    if (USE_SINKS) sinks_size = merger->get_aut()->get_root()->get_data()->num_sink_types();
+    if (CURRENT_CONFIG.USE_SINKS) sinks_size = merger->get_aut()->get_root()->get_data()->num_sink_types();
 
     if (!MERGE_SINKS_PRESOLVE) non_red_states->insert(sink_states->begin(), sink_states->end());
     num_states = red_states->size() + non_red_states->size();
@@ -1067,7 +1067,7 @@ void dfasat::compute_header() {
     std::cerr << "new init: " << new_init << std::endl;
 
     fix_red_values();
-    if (USE_SINKS) fix_sink_values();
+    if (CURRENT_CONFIG.USE_SINKS) fix_sink_values();
     erase_red_conflict_colours();
     set_symmetry();
 
@@ -1095,7 +1095,7 @@ void dfasat::compute_header() {
     }
 
     clause_counter += print_paths();
-    if (USE_SINKS) {
+    if (CURRENT_CONFIG.USE_SINKS) {
         clause_counter += print_sink_transitions();
         clause_counter += print_sink_paths();
     }
@@ -1123,7 +1123,7 @@ void dfasat::translate(FILE* sat_file) {
         print_forcing_transitions();
     }
     print_paths();
-    if(USE_SINKS) {
+    if(CURRENT_CONFIG.USE_SINKS) {
         print_sink_transitions();
         print_sink_paths();
     }
@@ -1215,9 +1215,9 @@ void dfasat::read_solution(FILE* sat_file, int best_solution, state_merger* merg
             pch = strtok(NULL, " ");
             std::cerr << pch << std::endl;
             if (strcmp(pch, "SATISFIABLE\n") == 0) {
-                std::cerr << "new solution, size = " << dfa_size << std::endl;
+                std::cerr << "new convergence, size = " << dfa_size << std::endl;
                 if (best_solution == -1 || best_solution > dfa_size) {
-                    std::cerr << "new best solution, size = " << dfa_size << std::endl;
+                    std::cerr << "new best convergence, size = " << dfa_size << std::endl;
                     best_solution = dfa_size;
                     improved = true;
                 }

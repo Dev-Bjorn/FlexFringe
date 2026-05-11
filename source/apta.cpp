@@ -35,13 +35,12 @@ apta::apta(){
     LOG_S(INFO) << "Creating APTA data structure";
     root = new apta_node();
     root->red = true;
-    merger = nullptr;
     root->number = 0;
 }
 
 bool apta::print_node(apta_node* n){
     if(n->rep() != nullptr) return false;
-    if(!n->data->print_state_true()) return false;
+    if(!n->get_data()->print_state_true()) return false;
     if(!PRINT_RED && n->red) return false;
     if(!PRINT_WHITE && !n->red) {
         if (n->source != nullptr) {
@@ -55,8 +54,8 @@ bool apta::print_node(apta_node* n){
 void apta_node::print_dot(std::iostream& output){
     output << "\t" << number << " [ label=\"";
     output << number << " #" << size << " ";
-    data->print_state_label(output);
-    data->print_state_style(output);
+    get_data()->print_state_label(output);
+    get_data()->print_state_style(output);
     output << "\" ";
 
     //if (representative == nullptr) output << ", style=filled";
@@ -93,7 +92,7 @@ void apta::print_dot(std::iostream& output){
 
             output << "\t\t" << n->number << " -> " << child->number << " [label=\"";
             output << inputdata_locator::get()->get_symbol(it->first) << " ";
-            n->data->print_transition_label(output, it->first);
+            n->get_data()->print_transition_label(output, it->first);
             for(auto & min_attribute_value : g->min_attribute_values){
                 output << "\\n" << inputdata_locator::get()->get_attribute(min_attribute_value.first)->get_name() << " >= " << min_attribute_value.second;
             }
@@ -140,7 +139,7 @@ void apta_node::print_json(json& nodes){
         }
     }
     json d;
-    data->write_json(d);
+    get_data()->write_json(d);
     output["data"] = d;
     nodes.push_back(output);
 }
@@ -178,6 +177,7 @@ void apta::print_json(std::iostream& outio){
         alphabet.push_back(inputdata_locator::get()->string_from_symbol(i));
     }
     output["alphabet"] = alphabet;
+    output["data_name"] = CURRENT_CONFIG.DATA_NAME;
 
     json nodes;
     for(merged_APTA_iterator Ait = merged_APTA_iterator(root); *Ait != nullptr; ++Ait) {
@@ -254,7 +254,7 @@ void apta::read_json(std::istream& input_stream){
         }
         node->number = n["id"];
         node->size = n["size"];
-        node->data->read_json(n["data"]);
+        node->get_data()->read_json(n["data"]);
         node->source = states[n["source"]];
         std::string trace = n["trace"];
         std::istringstream trace_stream(trace);
@@ -379,8 +379,14 @@ apta_node::apta_node(){
     sink = -1;
 
     try {
-       data = (DerivedDataRegister<evaluation_data>::getMap())->at(DATA_NAME)();
-       data->node = this;
+        for (const auto& config : HEURISTIC_CONFIGS) {
+            if (!ACTIVE_HEURISTICS.contains(config.CONFIG_NAME)) {
+                continue;
+            }
+            data[config.CONFIG_NAME] = (DerivedDataRegister<evaluation_data>::getMap())->at(config.DATA_NAME)();
+            data[config.CONFIG_NAME]->node = this;
+        }
+       // data = (DerivedDataRegister<evaluation_data>::getMap())->at(data_name)();
     } catch(const std::out_of_range& oor ) {
        std::cerr << "No data type found..." << std::endl;
     }
@@ -401,7 +407,9 @@ void apta_node::initialize(apta_node* n){
     depth = 0;
     red = false;
     sink = -1;
-    data->initialize();
+    for (auto pair : data) {
+        pair.second->initialize();
+    }
     for(auto & guard : guards){
         mem_store::delete_guard(guard.second);
     }
@@ -550,7 +558,7 @@ void merged_APTA_iterator::increment() {
     }
 }
 
-merged_APTA_iterator_func::merged_APTA_iterator_func(apta_node* start, bool(*node_check)(apta_node*)) : merged_APTA_iterator(start){
+merged_APTA_iterator_func::merged_APTA_iterator_func(apta_node* start, std::function<bool(apta_node*)> node_check) : merged_APTA_iterator(start) {
     check_function = node_check;
 }
 
@@ -687,7 +695,9 @@ apta_node::~apta_node(){
         delete t;
         t = n;
     }*/
-    delete data;
+    for(auto & data : data) {
+        delete data.second;
+    }
 }
 
 void apta::set_json_depths(){

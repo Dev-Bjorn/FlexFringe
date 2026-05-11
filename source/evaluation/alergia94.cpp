@@ -13,7 +13,7 @@ alergia94_data::alergia94_data(){
 
 bool alergia94::alergia_consistency(double right_count, double left_count, double right_total, double left_total){
     double bound = (1.0 / sqrt(left_total) + 1.0 / sqrt(right_total));
-    bound = bound * sqrt(0.5 * log(2.0 / CHECK_PARAMETER));
+    bound = bound * sqrt(0.5 * log(2.0 / CURRENT_CONFIG.CHECK_PARAMETER));
     
     double gamma = (left_count / left_total) - (right_count / right_total);
     
@@ -25,19 +25,19 @@ bool alergia94::alergia_consistency(double right_count, double left_count, doubl
 
 bool alergia94::data_consistent(alergia94_data* l, alergia94_data* r){
     /* we ignore low frequency states, decided by input parameter STATE_COUNT */
-    if(FINAL_PROBABILITIES) {
-        if (r->num_paths() + r->num_final() < STATE_COUNT ||
-            l->num_paths() + l->num_final() < STATE_COUNT)
+    if(CURRENT_CONFIG.FINAL_PROBABILITIES) {
+        if (r->num_paths() + r->num_final() < CURRENT_CONFIG.STATE_COUNT ||
+            l->num_paths() + l->num_final() < CURRENT_CONFIG.STATE_COUNT)
             return true;
     } else {
-        if (r->num_paths() < STATE_COUNT || l->num_paths() < STATE_COUNT) return true;
+        if (r->num_paths() < CURRENT_CONFIG.STATE_COUNT || l->num_paths() < CURRENT_CONFIG.STATE_COUNT) return true;
     }
 
     /* computing the dividers (denominator) */
     double left_divider = (double) l->num_paths();
     double right_divider = (double) r->num_paths();
 
-    if (FINAL_PROBABILITIES) {
+    if (CURRENT_CONFIG.FINAL_PROBABILITIES) {
         left_divider += (double) l->num_final();
         right_divider += (double) r->num_final();
     }
@@ -55,7 +55,7 @@ bool alergia94::data_consistent(alergia94_data* l, alergia94_data* r){
     }
 
     /* count the final probabilities */
-    if (FINAL_PROBABILITIES) {
+    if (CURRENT_CONFIG.FINAL_PROBABILITIES) {
         double left_count = l->num_final();
         double right_count = r->num_final();
 

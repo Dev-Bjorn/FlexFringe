@@ -83,8 +83,8 @@ bool gini::split_compute_consistency(state_merger *, apta_node* left, apta_node*
 
 double gini::split_compute_score(state_merger *, apta_node* left, apta_node* right){
     //cerr << "split: " << split_score << " " << num_split << endl;
-    if(num_split == 0) return - CHECK_PARAMETER;
-    return (split_score / num_split) - (CHECK_PARAMETER);
+    if(num_split == 0) return - CURRENT_CONFIG.CHECK_PARAMETER;
+    return (split_score / num_split) - (CURRENT_CONFIG.CHECK_PARAMETER);
 }
 
 
@@ -146,7 +146,7 @@ void gini::update_score(state_merger *merger, apta_node* left, apta_node* right)
 double gini::compute_score(state_merger *merger, apta_node* left, apta_node* right){
     //cerr << "split: " << split_score << " " << num_split << " merge: " << merge_score << " " << num_merge << endl;
     if(num_split == 0 && num_merge == 0) return -1.0;
-    return (merge_score / num_merge) + (CHECK_PARAMETER);
+    return (merge_score / num_merge) + (CURRENT_CONFIG.CHECK_PARAMETER);
     //return (split_score / num_split) + (merge_score / num_merge) + (CHECK_PARAMETER);
 };
 

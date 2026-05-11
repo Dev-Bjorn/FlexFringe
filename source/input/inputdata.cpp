@@ -260,7 +260,11 @@ void inputdata::add_trace_to_apta(trace *tr, apta *the_apta) {
     while (t != nullptr) {
         node->size = node->size + 1;
         node->add_tail(t);
-        node->data->add_tail(t);
+
+        // A for loop to add to all data objects
+        for (auto [k, v] : node->data) {
+            v->add_tail(t);
+        }
 
         depth++;
         if (t->is_final()) {

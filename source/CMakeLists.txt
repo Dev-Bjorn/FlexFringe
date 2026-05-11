@@ -83,19 +83,95 @@ add_library(Source STATIC
         input/streaming.cpp
         input/streaming.h
         input/parsers/reader_strategy.cpp
-        input/parsers/reader_strategy.h)
+        input/parsers/reader_strategy.h
+        mcts/Random.h
+        mcts/Random.cpp
+        mcts/node/MCTSNode.h
+        mcts/node/MCTSNode.cpp
+        mcts/MCTS.h
+        mcts/MCTS.cpp
+        mcts/selection/node/LCB1SelectionPolicy.h
+        mcts/selection/node/LCB1SelectionPolicy.cpp
+        mcts/selection/node/NodeSelection.cpp
+        mcts/selection/node/NodeSelection.h
+        mcts/propagate/data/LUCB1Data.h
+        mcts/propagate/data/LUCB1Data.cpp
+        mcts/action/UniformMergeSplitFirst.h
+        mcts/action/UniformMergeSplitFirst.cpp
+        mcts/action/ActionSelectionPolicy.h
+        mcts/action/ActionSelectionPolicy.cpp
+        mcts/action/FirstAction.cpp
+        mcts/action/FirstAction.h
+        mcts/propagate/data/NodeData.h
+        mcts/node/MCTSNodeFactory.cpp
+        mcts/node/MCTSNodeFactory.h
+        mcts/propagate/data/NodeDataFactory.cpp
+        mcts/propagate/data/NodeDataFactory.h
+        mcts/propagate/ModelSizeEvaluator.cpp
+        mcts/propagate/ModelSizeEvaluator.h
+        mcts/propagate/QualityEvaluation.cpp
+        mcts/propagate/QualityEvaluation.h
+        mcts/action/WeightedMergeSplitFirst.cpp
+        mcts/action/WeightedMergeSplitFirst.h
+        mcts/Runner.cpp
+        mcts/Runner.h
+        mcts/node/printer/DotPrinter.cpp
+        mcts/node/printer/DotPrinter.h
+        mcts/node/printer/JSONPrinter.cpp
+        mcts/node/printer/JSONPrinter.h
+        mcts/node/printer/MCTSPrinter.cpp
+        mcts/node/printer/MCTSPrinter.h
+        config/Config.h
+        config/MCTSConfig.h
+        mcts/expansion/ExpansionRulePolicy.cpp
+        mcts/expansion/ExpansionRulePolicy.h
+        mcts/expansion/FullRule.cpp
+        mcts/expansion/FullRule.h
+        mcts/Strings.h
+        Printer.cpp
+        Printer.hpp
+        config/Config.cpp
+        config/MCTSConfig.cpp
+        mcts/comparison/ComparisonAlgorithm.cpp
+        mcts/comparison/ComparisonAlgorithm.h
+        mcts/comparison/Greedy.cpp
+        mcts/comparison/Greedy.h
+        mcts/expansion/SingleExtendRule.cpp
+        mcts/expansion/SingleExtendRule.h
+        mcts/action/GreedyAction.cpp
+        mcts/action/GreedyAction.h
+        mcts/selection/SelectionSearchPolicy.cpp
+        mcts/selection/SelectionSearchPolicy.h
+        mcts/selection/BFSSearch.cpp
+        mcts/selection/BFSSearch.h
+        mcts/selection/ChildVSParentSearch.cpp
+        mcts/selection/ChildVSParentSearch.h
+        mcts/selection/node/UCB1SelectionPolicy.cpp
+        mcts/selection/node/UCB1SelectionPolicy.h
+        mcts/Refinements.h
+        mcts/action/UniformAction.cpp
+        mcts/action/UniformAction.h
+        mcts/convergence/ConvergencePolicy.cpp
+        mcts/convergence/ConvergencePolicy.h
+        mcts/convergence/IterationConvergence.cpp
+        mcts/convergence/IterationConvergence.h
+        mcts/convergence/ScoreThresholdConvergence.cpp
+        mcts/convergence/ScoreThresholdConvergence.h
+        mcts/convergence/ScoreImprovementConvergence.cpp
+        mcts/convergence/ScoreImprovementConvergence.h
+)
 
 ## create CMakeLists.txt in evaluation directory
-set(cmakelists_eval "evaluation/CMakeLists.txt")
-file(WRITE "${cmakelists_eval}" "add_library(Evaluation STATIC")
-file(GLOB CPPFiles "${CMAKE_CURRENT_SOURCE_DIR}/evaluation/*.cpp")
-foreach (Filepath ${Files})
-    get_filename_component(Filename ${Filepath} NAME)
-    string(REGEX REPLACE "\\.[^.]*$" "" CleanFilename ${Filename})
-    file(APPEND "${cmakelists_eval}" "\n            ${CleanFilename}.h")
-    file(APPEND "${cmakelists_eval}" "\n            ${CleanFilename}.cpp")
-endforeach ()
-file(APPEND "${cmakelists_eval}" ")")
+#set(cmakelists_eval "evaluation/CMakeLists.txt")
+#file(WRITE "${cmakelists_eval}" "add_library(Evaluation STATIC")
+#file(GLOB CPPFiles "${CMAKE_CURRENT_SOURCE_DIR}/evaluation/*.cpp")
+#foreach (Filepath ${Files})
+#    get_filename_component(Filename ${Filepath} NAME)
+#    string(REGEX REPLACE "\\.[^.]*$" "" CleanFilename ${Filename})
+#    file(APPEND "${cmakelists_eval}" "\n            ${CleanFilename}.h")
+#    file(APPEND "${cmakelists_eval}" "\n            ${CleanFilename}.cpp")
+#endforeach ()
+#file(APPEND "${cmakelists_eval}" ")")
 
 add_subdirectory(evaluation)
 add_subdirectory(utility)

@@ -18,7 +18,7 @@ refinement_list* greedy(state_merger* merger){
     refinement* best_ref = merger->get_best_refinement();
     while( best_ref != nullptr ){
         std::cout << " ";
-        best_ref->print_short();
+        best_ref->to_short_string();
         std::cout << " ";
         std::cout.flush();
 

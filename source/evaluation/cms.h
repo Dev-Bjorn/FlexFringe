@@ -39,7 +39,7 @@ public:
     //************************************* Sinks **********************************************
 
     inline bool is_low_count_sink() const noexcept {
-        return this->node->get_size() < SINK_COUNT;
+        return this->node->get_size() < CURRENT_CONFIG.SINK_COUNT;
     }
 
     //inline bool is_stream_sink(apta_node* node) const noexcept {
@@ -47,7 +47,7 @@ public:
     //}
 
     inline int sink_type(apta_node* node) const noexcept {
-        if(!USE_SINKS) return -1;
+        if(!CURRENT_CONFIG.USE_SINKS) return -1;
 
         if (is_low_count_sink()) return 0;
         //if(is_stream_sink(node)) return 2;
@@ -55,14 +55,14 @@ public:
     };
 
     inline bool sink_consistent(int type) const noexcept {
-        if(!USE_SINKS) return true;
+        if(!CURRENT_CONFIG.USE_SINKS) return true;
 
         if(type == 0) return is_low_count_sink();
         return true;
     };
 
     inline int num_sink_types() const noexcept{
-        if(!USE_SINKS) return 0;
+        if(!CURRENT_CONFIG.USE_SINKS) return 0;
         return 2;
     };
 
@@ -82,7 +82,6 @@ public:
 
     virtual bool consistent(state_merger *merger, apta_node *left, apta_node *right);
     //virtual void initialize(state_merger *);
-
 };
 
 #endif

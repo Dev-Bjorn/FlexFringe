@@ -116,7 +116,7 @@ bool mse_error::consistent(state_merger *merger, apta_node* left, apta_node* rig
     const auto* l = static_cast<mse_data *>(left->get_data());
     const auto* r = static_cast<mse_data *>(right->get_data());
 
-    if(l->num_tails < SYMBOL_COUNT || r->num_tails < SYMBOL_COUNT) return true;
+    if(l->num_tails < CURRENT_CONFIG.SYMBOL_COUNT || r->num_tails < CURRENT_CONFIG.SYMBOL_COUNT) return true;
     for (int i = 0; i < l->sums.size(); ++i) {
         double mean_left = l->sums[i] / l->num_tails;
         double variance_left = l->sum_squares[i]/l->num_tails - (mean_left * mean_left);
@@ -136,7 +136,7 @@ void mse_error::update_score(state_merger *merger, apta_node* left, apta_node* r
     double temp_RSS_after = RSS_after;
     double temp_num_points = num_points;
 
-    if(l->num_tails <= STATE_COUNT || r->num_tails <= STATE_COUNT) return;
+    if(l->num_tails <= CURRENT_CONFIG.STATE_COUNT || r->num_tails <= CURRENT_CONFIG.STATE_COUNT) return;
 
     bool already_merged = false;
 
@@ -211,7 +211,7 @@ bool mse_error::compute_consistency(state_merger *merger, apta_node* left, apta_
     if (num_points == 0){ return false; }
     if (RSS_before == 0 && RSS_after != 0){ return false; }
     if (RSS_after == 0){ return true; }
-    return 2*total_merges + num_points*(log(RSS_before/num_points)) - num_points*log(RSS_after/num_points) > CHECK_PARAMETER;
+    return 2*total_merges + num_points*(log(RSS_before/num_points)) - num_points*log(RSS_after/num_points) > CURRENT_CONFIG.CHECK_PARAMETER;
 };
 
 void mse_error::reset(state_merger *merger ){
@@ -262,24 +262,24 @@ bool mse_error::split_compute_consistency(state_merger *, apta_node* left, apta_
 
 bool is_low_occ_sink(apta_node* node){
     mse_data* l = (mse_data*) node->get_data();
-    return l->num_tails < STATE_COUNT;
+    return l->num_tails < CURRENT_CONFIG.STATE_COUNT;
 }
 
 int mse_error::sink_type(apta_node* node){
-    if(!USE_SINKS) return -1;
+    if(!CURRENT_CONFIG.USE_SINKS) return -1;
 
     if (is_low_occ_sink(node)) return 0;
     return -1;
 };
 
 bool mse_error::sink_consistent(apta_node* node, int type){
-    if(!USE_SINKS) return true;
+    if(!CURRENT_CONFIG.USE_SINKS) return true;
     
     if(type == 0) return is_low_occ_sink(node);
     return true;
 };
 
 int mse_error::num_sink_types(){
-    if(!USE_SINKS) return 0;
+    if(!CURRENT_CONFIG.USE_SINKS) return 0;
     return 1;
 };

@@ -17,6 +17,7 @@ struct score_compare;
 struct ref_compare;
 
 typedef std::list<refinement*> refinement_list;
+typedef std::vector<refinement*> refinement_vector;
 typedef std::set<refinement*, score_compare > refinement_set;
 typedef std::set<refinement*, ref_compare > refinement_store;
 
@@ -43,8 +44,8 @@ public:
     refinement();
     virtual ~refinement(){ };
 
-	virtual void print() const;
-	virtual void print_short() const;
+	[[nodiscard]] virtual std::string to_string() const;
+	[[nodiscard]] virtual std::string to_short_string() const;
 	virtual void doref(state_merger* m);
 	virtual void undo(state_merger* m);
     virtual bool testref(state_merger* m);
@@ -75,8 +76,8 @@ public:
 	merge_refinement(state_merger* m, double s, apta_node* l, apta_node* r);
     void initialize(state_merger* m, double s, apta_node* l, apta_node* r);
 
-	virtual inline void print() const;
-	virtual inline void print_short() const;
+	[[nodiscard]] inline std::string to_string() const override;
+	[[nodiscard]] inline std::string to_short_string() const override;
 	virtual inline void doref(state_merger* m);
 	virtual inline void undo(state_merger* m);
     virtual inline bool testref(state_merger* m);
@@ -98,8 +99,8 @@ public:
 	extend_refinement(state_merger* m, apta_node* r);
     void initialize(state_merger* m, apta_node* r);
 
-	virtual inline void print() const;
-	virtual inline void print_short() const;
+	[[nodiscard]] inline std::string to_string() const override;
+	[[nodiscard]] inline std::string to_short_string() const override;
 	virtual inline void doref(state_merger* m);
 	virtual inline void undo(state_merger* m);
     virtual inline bool testref(state_merger* m);
@@ -123,8 +124,8 @@ public:
 	split_refinement(state_merger* m, double s, apta_node* l, tail* t, int a);
 	void initialize(state_merger* m, double s, apta_node* l, tail* t, int a);
 
-	virtual inline void print() const;
-	virtual inline void print_short() const;
+	[[nodiscard]] inline std::string to_string() const override;
+	[[nodiscard]] inline std::string to_short_string() const override;
 	virtual inline void doref(state_merger* m);
 	virtual inline void undo(state_merger* m);
     virtual inline bool testref(state_merger* m);

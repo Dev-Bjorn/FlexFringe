@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MCTS Tree Viewer</title>
+
+    <style>
+        :root {
+            --contrast-bg: #CCCCCC;
+            --bg-color-1: #191A1C;
+            --bg-color-2: #1E1F22;
+            --bg-color-3: #313438;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+        /* -------------- COMMON ---------------- */
+        .sep {
+            width: 1px;
+            height: 1em;
+            background-color: var(--bg-color-3);
+            margin: 0 0.5em;
+        }
+
+        .btn {
+            margin: 0 0.2em;
+            font-family: 'JetBrains Mono', 'Fira Mono', monospace;
+            background-color: var(--contrast-bg);
+            border: 0;
+            border-radius: 0.4rem;
+            transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+        }
+
+        .btn:hover, .btn:focus {
+            background-color: #858585;
+            color: #F5F5F5;
+        }
+
+        .divider {
+            height: 1px;
+            background-color: var(--bg-color-3);
+            margin: 0.5em 0;
+        }
+
+
+        .right {
+            margin-left: auto;
+        }
+
+        body {
+            font-family: 'JetBrains Mono', 'Fira Mono', monospace;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background-color: var(--bg-color-1);
+        }
+
+        /* ----------- HEADER ------------ */
+        .header {
+            z-index: 20;
+            background-color: var(--bg-color-1);
+            padding-left: 1%;
+            padding-right: 1%;
+            display: flex;
+            flex-direction: row;
+            height: 4rem;
+            align-items: center;
+            border-bottom: 0.05em solid var(--bg-color-3);
+        }
+
+        .header-text {
+            color: var(--contrast-bg);
+        }
+
+        .header-title {
+            font-size: 1.5em;
+        }
+
+        #file-elem {
+            display: none;
+        }
+
+        .file-selector {
+            font-size: 0.9rem;
+            color: var(--bg-color-1);
+            height: 1.5rem;
+        }
+
+        .file-selector:hover, .file-selector:active, .file-selector:focus {
+            background-color: #858585;
+            color: #F5F5F5;
+        }
+
+        .search-path-node {
+            border: 0;
+            background-color: var(--contrast-bg);
+        }
+
+        .search-path-node:focus {
+            outline: transparent;
+        }
+
+
+        /* --------------------- CANVAS ----------------------- */
+        .canvas {
+            background-color: var(--bg-color-2);
+            flex: 1;
+        }
+
+        #svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* ----------------- FOOTER ----------------- */
+        .footer {
+            z-index: 20;
+            display: flex;
+            background-color: var(--bg-color-1);
+            align-items: center;
+            flex-direction: row;
+            padding-left: 1%;
+            padding-right: 1%;
+            height: 2rem;
+
+            border-top: 1px solid var(--bg-color-3);
+        }
+
+        .footer-container {
+            display: flex;
+            flex-direction: row;
+            gap: 0.3em;
+            min-width: 1em;
+            justify-items: center;
+            align-items: center;
+            width: max-content;
+        }
+
+        .footer-text {
+            color: var(--contrast-bg);
+            font-size: 1em;
+        }
+
+        .footer-item-container {
+            display: flex;
+            min-width: min-content;
+        }
+
+        /* --------------------- TOOLTIP --------------------- */
+
+        .tooltip {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            background-color: var(--bg-color-1);
+            border: 1px solid var(--bg-color-3);
+
+            color: white;
+            border-radius: 0.5em;
+            padding: 0.5em;
+            position: fixed;
+            pointer-events: none;
+            z-index: 10;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+
+            /* So the tooltip does not grow out of bounds*/
+            max-width: calc(0.75 * 25em);
+        }
+
+        .tooltip-id {
+            grid-column: 1 / -1; /* span both columns */
+            text-align: center;
+            font-weight: bold;
+            padding-bottom: 0.25em;
+            border-bottom: 1px solid var(--bg-color-3);
+            margin-bottom: 0.25em;
+        }
+
+        .tooltip-row {
+            grid-column: 1 / -1; /* span both columns */
+            display: grid;
+            grid-template-columns: 1fr min-content;
+            grid-template-rows: min-content;
+            column-gap: 1em;
+        }
+
+        .tooltip-key {
+            grid-column: 1;
+            grid-row: 1;
+            font-weight: 1000;
+            font-size: 1em;
+        }
+
+        .tooltip-value {
+            grid-column: 2;
+            grid-row: 1;
+            font-weight: 200;
+            opacity: 0.5;
+            width: max-content;
+        }
+
+        /* LEGEND */
+
+        .sidebar-btn {
+            display: block;
+            z-index: 20;
+            top: 0;
+            right: 0;
+            width: 2em;
+            height: 2rem;
+            background-color: transparent;
+            border: none;
+            color: var(--contrast-bg);
+            cursor: pointer;
+        }
+
+        .sidebar-btn:hover {
+
+        }
+
+        .legend-container {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 18em;
+            grid-template-rows: min-content min-content min-content;
+
+            z-index: 15;
+            height: 100%;
+            background-color: var(--bg-color-1);
+            border-left: 1px solid var(--bg-color-3);
+            overflow-y: auto;
+            padding: 4.5rem 1rem 2.5rem 1rem;
+            color: var(--contrast-bg);
+            gap: 0.75em;
+        }
+
+        .legend-element-container {
+            display: grid;
+            grid-template-rows: min-content;
+            gap: 0.2em;
+
+        }
+
+        .legend-element-header {
+            font-size: 1.25em;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .legend-tooltip-key {
+            font-weight: bold;
+            font-size: 1em;
+        }
+
+        .legend-tooltip-hint {
+            font-size: 0.75em;
+            opacity: 0.6;
+        }
+
+        .legend-color-item {
+            display: grid;
+            grid-template-columns: min-content 1fr;
+            gap: 0.5em;
+        }
+
+        .legend-color-icon {
+            height: 1em;
+            width: 1em;
+            border-radius: 0.2em;
+        }
+
+        .greedy {
+            background-color: #4A7FB5;
+        }
+
+        .unvisited {
+            background-color: #C17F54;
+        }
+
+        .terminal {
+            background-color: #E8534A;
+        }
+
+        .non-expandable {
+            background-color: #6A9E4A;
+        }
+
+        .merge-exhausted {
+            background-color: #F0A500;
+        }
+
+        .search {
+            background-color: #FF00CC;
+        }
+
+        .no-meaning {
+            background-color: #D0D0D0;
+        }
+
+        .legend-settings-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5em;
+        }
+
+        .checkbox-box {
+            width: 1em;
+            height: 1em;
+
+            /* CENTERING */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            border: 1px solid var(--bg-color-3);
+            border-radius: 0.2em;
+            transition: background 0.15s, border-color 0.15s;
+        }
+
+        .checkbox-box svg {
+            width: 75%;
+            height: 75%;
+            opacity: 0;
+            transition: opacity 0.15s;
+        }
+
+        .checkbox-box.checked {
+            border-color: var(--contrast-bg);
+        }
+
+        .checkbox-box.checked svg {
+            opacity: 1;
+            color: var(--contrast-bg);
+        }
+
+        .legend-settings-item {
+            display: flex;
+            gap: 0.5em;
+        }
+
+        .legend-settings-item .checkbox-box {
+            user-select: none;
+        }
+
+        /* tree path */
+        .tree-path-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 10em;
+
+            z-index: 15;
+            height: 100%;
+            background-color: var(--bg-color-1);
+            border-right: 1px solid var(--bg-color-3);
+            overflow-y: auto;
+            padding: 4.5rem 1rem 2.5rem 1rem;
+            color: var(--contrast-bg);
+        }
+
+        .fold-btn {
+            position: absolute;
+            right: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+<div id="tree-path" class="tree-path-container">
+    <div id="fold-btn" class="fold-btn">
+        <svg width="8" height="14">
+            <line x1="7" y1="1" x2="1" y2="7" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round"/>
+            <line x1="1" y1="7" x2="7" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round"/>
+        </svg>
+    </div>
+    <div id="tree-path-text-area" class="tree-path-text-area">
+
+    </div>
+</div>
+<div id="legend" class="legend-container">
+    <div class="legend-element-container">
+        <h2 class="legend-element-header">
+            Tooltip Legend
+        </h2>
+        <div class="divider"></div>
+        <div class="legend-tooltip-item">
+            <div class="legend-tooltip-key">APTA Node</div>
+            <div class="legend-tooltip-hint">The extended node, or the two node IDs that are merged together.</div>
+        </div>
+        <div class="legend-tooltip-item">
+            <div class="legend-tooltip-key">Quality</div>
+            <div class="legend-tooltip-hint">The first score achieved after a rollout occurred on this node.
+                May be undefined when the node is auto-expanded, which only happens when the parent node has a single
+                child.
+            </div>
+        </div>
+        <div class="legend-tooltip-item">
+            <div class="legend-tooltip-key">Refinement Score</div>
+            <div class="legend-tooltip-hint">The refinement score achieved by this node.</div>
+        </div>
+        <div class="legend-tooltip-item">
+            <div class="legend-tooltip-key">Size</div>
+            <div class="legend-tooltip-hint">The number of times this node has been visited.</div>
+        </div>
+        <div class="legend-tooltip-item">
+            <div class="legend-tooltip-key">Greedy Node</div>
+            <div class="legend-tooltip-hint">Whether this node was selected by the greedy algorithm.</div>
+        </div>
+        <div class="legend-tooltip-item">
+            <div class="legend-tooltip-key">Visited Node</div>
+            <div class="legend-tooltip-hint">Whether this node was visited during the search.</div>
+        </div>
+        <div class="legend-tooltip-item">
+            <div class="legend-tooltip-key">Terminal Node</div>
+            <div class="legend-tooltip-hint">Whether this is a terminal node, meaning the search reached an end state.
+            </div>
+        </div>
+        <div class="divider"></div>
+    </div>
+    <div class="legend-element-container">
+        <h2 class="legend-element-header">Node Colouring Legend</h2>
+        <div class="divider"></div>
+        <div class="legend-color-item">
+            <div class="legend-color-icon greedy"></div>
+            <div class="legend-color-name">Greedy Node</div>
+        </div>
+        <div class="legend-color-item">
+            <div class="legend-color-icon terminal"></div>
+            <div class="legend-color-name">Terminal Node</div>
+        </div>
+        <div class="legend-color-item">
+            <div class="legend-color-icon non-expandable"></div>
+            <div class="legend-color-name">Exhausted Node</div>
+        </div>
+        <div class="legend-color-item">
+            <div class="legend-color-icon merge-exhausted"></div>
+            <div class="legend-color-name">Merges Exhausted</div>
+        </div>
+        <div class="legend-color-item">
+            <div class="legend-color-icon unvisited"></div>
+            <div class="legend-color-name">Not Expanded</div>
+        </div>
+        <div class="legend-color-item">
+            <div class="legend-color-icon search"></div>
+            <div class="legend-color-name">Search Node</div>
+        </div>
+        <div class="legend-color-item">
+            <div class="legend-color-icon no-meaning"></div>
+            <div class="legend-color-name">Other</div>
+        </div>
+        <div class="divider"></div>
+    </div>
+
+    <div class="legend-settings-container">
+        <h2 class="legend-element-header">Settings</h2>
+        <div class="divider"></div>
+        <div class="legend-settings-item">
+            <div id="show-greedy-btn" class="checkbox-box">
+                <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                     stroke-linejoin="round">
+                    <polyline points="2,6 5,9 10,3"/>
+                </svg>
+            </div>
+            <div class="legend-settings-name">Show Greedy Nodes</div>
+        </div>
+        <div class="legend-settings-item">
+            <div id="show-unvisited-btn" class="checkbox-box">
+                <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                     stroke-linejoin="round">
+                    <polyline points="2,6 5,9 10,3"/>
+                </svg>
+            </div>
+            <div class="legend-settings-name">Show Unvisited Nodes</div>
+        </div>
+        <div class="legend-settings-item">
+            <div id="show-onlypath-btn" class="checkbox-box">
+                <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                     stroke-linejoin="round">
+                    <polyline points="2,6 5,9 10,3"/>
+                </svg>
+            </div>
+            <div class="legend-settings-name">Show Leaves</div>
+        </div>
+        <div class="divider"></div>
+    </div>
+</div>
+<div id="header" class="header">
+    <h1 class="header-text header-title">MCTS Tree Viewer</h1>
+    <div class="sep"></div>
+    <input type="file" id="file-elem" accept=".json"/>
+    <button class="btn file-selector" id="file-select" type="button">Select File</button>
+    <div class="sep"></div>
+    <input type="text" id="tree-path-search" class="search-path-node">
+    <div class="sep"></div>
+    <button id="reset-search-btn" class="btn">Reset Search</button>
+    <button id="fit-btn" class="btn">Reset Zoom</button>
+    <button id="download-btn" class="btn">Download</button>
+    <div class="sep"></div>
+    <div class="sep right"></div>
+    <button class="sidebar-btn" id="sidebar-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="3" y1="6" x2="15" y2="6"/>
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="18" x2="15" y2="18"/>
+        </svg>
+    </button>
+</div>
+
+<div id="canvas" class="canvas">
+    <svg id="svg">
+        <g id="tree"></g>
+    </svg>
+</div>
+<div id="footer" class="footer">
+    <div class="footer-container footer-text">
+        MCTS:
+        <div id="mcts-heuristic" class="footer-item-container">-</div>
+    </div>
+    <div class="sep"></div>
+    <div class="footer-container footer-text">
+        <div id="comparison-name" class="footer-item-container">-</div>:
+        <div id="comparison-heuristic" class="footer-item-container">-</div>
+    </div>
+    <div class="sep"></div>
+    <div class="footer-container footer-text">
+        Selection:
+        <div id="selection-policy-info" class="footer-item-container">-</div>
+    </div>
+    <div class="sep"></div>
+    <div class="footer-container footer-text">
+        Expansion:
+        <div id="expansion-action-info" class="footer-item-container">-</div>
+        <div id="expansion-rule-info" class="footer-item-container">-</div>
+    </div>
+    <div class="sep"></div>
+    <div class="footer-container footer-text">
+        Rollout:
+    <div id="rollout-action-info" class="footer-item-container">-</div>
+    <div id="max-rollout-steps" class="footer-item-container">-</div>
+    </div>
+    <div class="sep"></div>
+    <div class="footer-container footer-text">
+        Quality Evaluator:
+    <div id="quality-evaluator-info" class="footer-item-container">-</div>
+    </div>
+    <div class="sep"></div>
+    <div class="sep right"></div>
+    <div id="drop" class="footer-text">Drop JSON file here</div>
+</div>
+<div id="tooltip" class="tooltip">
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script>
+    function getNodeMap(nodes) {
+        const nodeMap = new Map();
+        for (const node of nodes) {
+            nodeMap.set(node.id, node);
+        }
+        return nodeMap;
+    }
+
+    function getChildMap(nodeMap) {
+        const childMap = new Map();
+        nodeMap.forEach(value => {
+            if (!childMap.has(value.from)) childMap.set(value.from, []);
+            childMap.get(value.from).push({to: value.to, visits: value.visits});
+        })
+        return childMap;
+    }
+
+    function readJSON(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    resolve({data: data, file: file});
+                } catch (e) {
+                    reject(e);
+                }
+            };
+            reader.readAsText(file);
+        })
+    }
+
+    function loadJSON(file) {
+        console.log(file.name);
+        readJSON(file).then(({data, file}) => {
+            treeData = data;
+            setFileName(file.name);
+            render(data);
+        });
+    }
+
+    function setFileName(file) {
+        document.getElementById("drop").textContent = file;
+    }
+
+    function color(node) {
+        if (node.id === 0) return "#E8E8E8";
+        if (searchElement !== null && node.involvedNodes.includes(searchElement)) return "#FF00CC";
+        if (showGreedy && node.isGreedyNode) return "#4A7FB5";
+        if (!node.isVisited) return "#C17F54";
+        if (node.isTerminal) return "#E8534A";
+        if (!node.isExpandable) return "#6A9E4A";
+        if (node.hasOnlyVisitedMerges) return "#F0A500";
+        return "#D0D0D0";
+    }
+
+    function strokeColor(node) {
+        if (node.id === 0) return "#AAAAAA";
+        if (searchElement !== null && node.involvedNodes.includes(searchElement)) return "#990077";
+        if (showGreedy && node.isGreedyNode) return "#2E5F8A";
+        if (!node.isVisited) return "#8A5530";
+        if (node.isTerminal) return "#B02B24";
+        if (!node.isExpandable) return "#3E6E28";
+        if (node.hasOnlyVisitedMerges) return "#B87800";
+        return "#AAAAAA";
+    }
+
+    function textColor(node) {
+        if (node.id === 0) return "#333333";
+        if (searchElement !== null && node.involvedNodes.includes(searchElement)) return "#ffffff";
+        if (showGreedy && node.isGreedyNode) return "#ffffff";
+        if (!node.isVisited) return "#ffffff";
+        if (node.isTerminal) return "#ffffff";
+        if (!node.isExpandable) return "#ffffff";
+        if (node.hasOnlyVisitedMerges) return "#ffffff";
+        return "#1a1a1a";
+    }
+
+    function isVisible(node) {
+        if (node.data.id === 0) return true;
+        if (!showGreedy && node.data.isGreedyNode && node.data.id < 0) return false;
+        if (!showUnvisited && !node.data.isVisited) return false;
+        if (!showLeaves && (node.children?.length || node.data.isTerminal)) return true;
+        return showLeaves;
+
+    }
+
+    function formatInvolvedNodes(value) {
+        return value.join(", ");
+    }
+
+    function createTooltip(data) {
+        function row(key, value) {
+            return `
+            <div class="tooltip-row">
+                <span class="tooltip-key">${key}</span>
+                <span class="tooltip-value">${value}</span>
+            </div>
+        `
+        }
+
+        function formatBool(value) {
+            return value ? "True" : "False";
+        }
+
+        function formatRefScore(value) {
+            if (value === 0) return "-";
+            return value.toFixed(2);
+        }
+
+        function formatScore(value) {
+            if (value === -1) return "-";
+            return value.toFixed(2);
+        }
+
+        return `
+        <div class="tooltip-id">${data.refinement} #${data.id}</div>
+        ${row("APTA Nodes", formatInvolvedNodes(data.involvedNodes))}
+        ${row("PDFA Size", formatScore(data.dfaSize))}
+        ${row("Quality", formatScore(data.score))}
+        ${row("Refinement Score", formatRefScore(data.refScore))}
+        ${row("Size", formatRefScore(data.refVisits))}
+        ${row("Greedy Node", formatBool(data.isGreedyNode))}
+        ${row("Visited Node", formatBool(data.isVisited))}
+        ${row("Terminal Node", formatBool(data.isTerminal))}
+        ${row("Merge Exhausted", formatBool(data.hasOnlyVisitedMerges))}
+        ${row("Expandable", formatBool(data.isExpandable))}
+    `
+    }
+
+    function createNodePathRepresentation(data) {
+        if (data.id === 0) return "ROOT"
+        return data.refinement + "(" + data.involvedNodes.join(", ") + ")";
+    }
+
+    function createTreePath(node) {
+        const path = node.reverse().map(n => createNodePathRepresentation(n.data));
+        return path.join("<br>");
+    }
+
+    function updateRunInfo(data) {
+        if (!data) return;
+
+        document.getElementById("mcts-heuristic").innerText = data.mctsHeuristic;
+        document.getElementById("comparison-heuristic").innerText = data.comparisonHeuristic;
+        document.getElementById("comparison-name").innerText = data.comparisonAlgorithm;
+        document.getElementById('expansion-action-info').innerText = data.expansionActionPolicy + "(" + data.expansionSeed + ")";
+        document.getElementById('expansion-rule-info').innerText = data.expansionRulePolicy;
+        document.getElementById('selection-policy-info').innerText = data.selectionSearchPolicy + "(" + data.nodeSelectionPolicy + ")";
+        document.getElementById('rollout-action-info').innerText = data.rolloutActionPolicy + "(" + data.rolloutSeed + ")";
+        document.getElementById("max-rollout-steps").innerText = data.maxRolloutSteps;
+        document.getElementById('quality-evaluator-info').innerText = data.qualityEvaluatorPolicy;
+    }
+</script>
+<script>
+    // GLOBAL VARS
+    let treeData = null;
+    let showGreedy = true;
+    let showUnvisited = false;
+    let showLeaves = true;
+    let searchElement = null;
+</script>
+<script>
+    const legend = document.getElementById('legend');
+    const sidebarBtn = document.getElementById('sidebar-btn');
+
+    legend.style.display = "none";
+    sidebarBtn.onclick = function (e) {
+        e.stopPropagation();
+        if (legend.style.display === "none") legend.style.display = "grid";
+        else legend.style.display = "none";
+    }
+
+    const showGreedyBtn = document.getElementById("show-greedy-btn");
+    showGreedyBtn.classList.toggle("checked", showGreedy);
+    showGreedyBtn.onclick = function (e) {
+        showGreedy = !showGreedy;
+        showGreedyBtn.classList.toggle("checked", showGreedy);
+        if (treeData !== null) render(treeData);
+    }
+
+    const showUnvisitedBtn = document.getElementById("show-unvisited-btn");
+    showUnvisitedBtn.classList.toggle("checked", showUnvisited);
+    showUnvisitedBtn.onclick = function (e) {
+        showUnvisited = !showUnvisited;
+        showUnvisitedBtn.classList.toggle("checked", showUnvisited);
+        if (treeData !== null) render(treeData);
+    }
+
+    const showOnlyPathBtn = document.getElementById("show-onlypath-btn");
+    showOnlyPathBtn.classList.toggle("checked", showLeaves);
+    showOnlyPathBtn.onclick = function (e) {
+        showLeaves = !showLeaves;
+        showOnlyPathBtn.classList.toggle("checked", showLeaves);
+        if (treeData !== null) render(treeData);
+    }
+
+    const download = document.getElementById("download-btn");
+    const svgElement = document.getElementById("svg");
+    download.onclick = function (e) {
+        const clone = svgElement.cloneNode(true);
+        clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+        clone.style.background = "#1a1a1a";
+        const blob = new Blob([clone.outerHTML], {type: "image/svg+xml"});
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "image.svg";
+        a.click();
+
+        URL.revokeObjectURL(url);
+    }
+
+    const treePathContainer = document.getElementById('tree-path');
+    treePathContainer.style.display = "none";
+    const treePathTextArea = document.getElementById('tree-path-text-area');
+
+    const treePathBtn = document.getElementById('fold-btn');
+    treePathBtn.onclick = function (e) {
+        e.stopPropagation();
+        treePathContainer.style.display = "none";
+    }
+
+    const treePathSearch = document.getElementById('tree-path-search');
+    treePathSearch.addEventListener('keydown', (e) => {
+        if (e.key === "Enter") {
+            let number = Number.parseInt(treePathSearch.value);
+            if (isNaN(number)) {
+                searchElement = null;
+            } else {
+                searchElement = number;
+            }
+            treePathSearch.blur()
+            if (treeData !== null) render(treeData);
+        }
+    });
+
+    const resetSearch = document.getElementById('reset-search-btn');
+    resetSearch.onclick = function () {
+        searchElement = null;
+        treePathSearch.value = '';
+        if (treeData !== null) render(treeData);
+        resetSearch.blur();
+    }
+
+    const fitBtn = document.getElementById("fit-btn");
+    fitBtn.onclick = function () {
+        if (treeData !== null) render(treeData);
+        fitBtn.blur();
+    }
+
+    const fileInput = document.getElementById("file-select");
+    const fileElem = document.getElementById("file-elem");
+    fileInput.onclick = function () {
+        fileElem.value = '';
+        fileElem.click();
+        fileInput.blur();
+    };
+    fileElem.onchange = function () {
+
+        if (this.files[0]) loadJSON(this.files[0])
+    };
+    document.addEventListener("dragenter", () => {
+    });
+    document.addEventListener("dragleave", e => {
+    });
+    document.addEventListener("dragover", e => e.preventDefault());
+    document.addEventListener("drop", e => {
+        e.preventDefault();
+        if (e.dataTransfer.files.length > 0) loadJSON(e.dataTransfer.files[0]);
+    });
+</script>
+<script>
+
+    function render(data) {
+        const svg = d3.select("#svg");
+        const g = d3.select("#tree");
+        g.selectAll("*").remove();
+
+        const W = svg.node()?.clientWidth || 1200;
+        const H = svg.node()?.clientHeight || 700;
+
+        const nodeMap = getNodeMap(data.nodes);
+        const childMap = getChildMap(data.edges);
+        const root = d3.hierarchy(nodeMap.get(0), d => childMap.get(d.id)?.map(n => nodeMap.get(n.to)));
+
+        // START GENERATED WITH AI
+        const N = root.descendants().length;
+        const nodeSep = Math.max(22, Math.min(48, 1400 / Math.max(1, N)));
+        const rankSep = Math.max(60, Math.min(120, H / Math.max(2, root.height + 1)));
+        // END GENERATED WITH AI
+
+        d3.tree().nodeSize([nodeSep, rankSep])
+            .separation((a, b) => {
+                if (a.parent === b.parent) {
+                    let length = a.parent.children.length / (a.children?.length || a.parent.children.length);
+
+                    return 2 - (1 - length);
+                }
+                return 2;
+            })(root);
+
+        const edges = g.append("g").attr("fill", "none");
+        root.links().forEach(lnk => {
+            const source = lnk.source;
+            const target = lnk.target;
+
+            if (!isVisible(target)) return;
+
+            edges.append("path")
+                .attr("d", d3.linkVertical()
+                    .x(d => d.x)
+                    .y(d => d.y)
+                    ({source, target}))
+                .attr("stroke", "#FFF")
+                .attr("stroke-width", 1);
+        });
+
+        const nodes = g.append("g").attr("fill", "none");
+        const node = nodes
+            .selectAll("g")
+            .data(root.descendants())
+            .join("g")
+            .attr("transform", d => `translate(${d.x},${d.y})`);
+
+        node.each(function (d) {
+            const n = d3.select(this);
+
+            if (!isVisible(d)) return;
+
+            n.append("ellipse")
+                .attr("rx", 18)
+                .attr("ry", 10.5)
+                .attr("fill", color(d.data))
+                .attr("fill-opacity", 0.2)
+                .attr("stroke", "none");
+
+            n.append("ellipse")
+                .attr("rx", 16)
+                .attr("ry", 9)
+                .attr("fill", color(d.data))
+                .attr("stroke", strokeColor(d.data))
+                .attr("stroke-width", 0.8);
+
+            n.append("text")
+                .text(d.data.id === 0 ? "Root" : `${d.data.refinement} #${d.data.id}`)
+                .attr("fill", textColor(d.data))
+                .attr("dy", d.data.id === 0 ? 0 : -2)
+                .attr("font-size", 4.5)
+                .attr("font-family", "monospace")
+                .attr("font-weight", 600)
+                .attr("text-anchor", "middle")
+                .attr("dominant-baseline", "middle")
+                .style("pointer-events", "none");
+            if (d.data.id === 0) return;
+            n.append("text")
+                .text(d.data.id === 0 ? "" : `${formatInvolvedNodes(d.data.involvedNodes)}`)
+                .attr("fill", textColor(d.data))
+                .attr("font-size", 4)
+                .attr("dy", 2.5)
+                .attr("font-family", "monospace")
+                .attr("font-weight", 600)
+                .attr("text-anchor", "middle")
+                .attr("dominant-baseline", "middle")
+                .style("pointer-events", "none");
+        })
+
+        const tooltip = document.getElementById("tooltip");
+
+        node
+            .on("mousemove", function (event, d) {
+                if (d.data.id === 0) return;
+                tooltip.innerHTML = createTooltip(d.data);
+                tooltip.style.display = "grid";
+                tooltip.style.left = (event.clientX + 14) + "px"
+                tooltip.style.top = (event.clientY - 10) + "px"
+            })
+            .on("mouseout", function (event, d) {
+                if (d.data.id === 0) return;
+                tooltip.style.display = "none";
+            })
+            .on("click", function (event, d) {
+                if (d.data.id === 0) return;
+                console.log("Clicked on node with id:", d.data.id);
+                treePathContainer.style.display = "block";
+                treePathTextArea.innerHTML = createTreePath(d.ancestors());
+            })
+
+
+        // START GENERATED WITH AI
+        const xs = root.descendants().filter(d => isVisible(d)).map(d => d.x);
+        const ys = root.descendants().filter(d => isVisible(d)).map(d => d.y);
+        const x0 = Math.min(...xs), x1 = Math.max(...xs);
+        const y0 = Math.min(...ys), y1 = Math.max(...ys);
+        const scale = Math.min(0.95 * W / ((x1 - x0) || 1), 0.9 * H / ((y1 - y0) || 1));
+        svg.call(zoomBehaviour.transform, d3.zoomIdentity.translate(W / 2 - scale * (x0 + x1) / 2, 40 - scale * y0).scale(scale));
+        // END GENERATED WITH AI
+
+        updateRunInfo(data.info);
+    }
+
+    const svg = d3.select("#svg");
+    const zoomBehaviour = d3.zoom()
+        .scaleExtent([0.02, 8])
+        .on("zoom", e => d3.select("#tree").attr("transform", e.transform));
+    svg.call(zoomBehaviour);
+</script>
+</body>
+</html>

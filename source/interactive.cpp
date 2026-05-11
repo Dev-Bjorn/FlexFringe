@@ -48,7 +48,7 @@ refinement_list* interactive(state_merger* merger){
 
             std::cout << "Possible refinements: " << std::endl;
             for(refinement_set::iterator it = refs->begin(); it != refs->end(); ++it){
-                (*it)->print();
+                (*it)->to_string();
                 std::cout << " , ";
             }
 
@@ -88,38 +88,38 @@ refinement_list* interactive(state_merger* merger){
                 cline >> arg;
                 if(arg == "state_count") {
                     cline >> arg;
-                    STATE_COUNT = stoi(arg);
-                    std::cout << "STATE_COUNT is now " << STATE_COUNT << std::endl;
+                    CURRENT_CONFIG.STATE_COUNT = stoi(arg);
+                    std::cout << "STATE_COUNT is now " << CURRENT_CONFIG.STATE_COUNT << std::endl;
                 }
                 if(arg == "symbol_count") {
                     cline >> arg;
-                    SYMBOL_COUNT = stoi(arg);
-                    std::cout << "SYMBOL_COUNT is now " << SYMBOL_COUNT << std::endl;
+                    CURRENT_CONFIG.SYMBOL_COUNT = stoi(arg);
+                    std::cout << "SYMBOL_COUNT is now " << CURRENT_CONFIG.SYMBOL_COUNT << std::endl;
                 }
                 if(arg == "lower_bound") {
                     cline >> arg;
-                    LOWER_BOUND = stoi(arg);
-                    std::cout << "LOWER_BOUND is now " << LOWER_BOUND << std::endl;
+                    CURRENT_CONFIG.LOWER_BOUND = stoi(arg);
+                    std::cout << "LOWER_BOUND is now " << CURRENT_CONFIG.LOWER_BOUND << std::endl;
                 }
                 if(arg == "sinkson") {
                     cline >> arg;
-                    USE_SINKS = stoi(arg);
-                    std::cout << "USE_SINKS is now " << (USE_SINKS==true ? "true" : "false") << std::endl;
+                    CURRENT_CONFIG.USE_SINKS = stoi(arg);
+                    std::cout << "USE_SINKS is now " << (CURRENT_CONFIG.USE_SINKS==true ? "true" : "false") << std::endl;
                 }
                 if(arg == "blueblue") {
                     cline >> arg;
-                    MERGE_BLUE_BLUE = stoi(arg);
-                    std::cout << "MERGE_BLUE_BLUE is now " << (MERGE_BLUE_BLUE==true ? "true" : "false") << std::endl;
+                    CURRENT_CONFIG.MERGE_BLUE_BLUE = stoi(arg);
+                    std::cout << "MERGE_BLUE_BLUE is now " << (CURRENT_CONFIG.MERGE_BLUE_BLUE==true ? "true" : "false") << std::endl;
                 }
                 if(arg == "shallowfirst") {
                     cline >> arg;
-                    DEPTH_FIRST = stoi(arg);
-                    std::cout << "SHALLOW_FIRST is now " << (DEPTH_FIRST==true ? "true" : "false") << std::endl;
+                    CURRENT_CONFIG.DEPTH_FIRST = stoi(arg);
+                    std::cout << "SHALLOW_FIRST is now " << (CURRENT_CONFIG.DEPTH_FIRST==true ? "true" : "false") << std::endl;
                 }
                 if(arg == "largestblue") {
                     cline >> arg;
-                    MERGE_MOST_VISITED = stoi(arg);
-                    std::cout << "MERGE_MOST_VISITED is now " << (MERGE_MOST_VISITED==true ? "true" : "false") << std::endl;
+                    CURRENT_CONFIG.MERGE_MOST_VISITED = stoi(arg);
+                    std::cout << "MERGE_MOST_VISITED is now " << (CURRENT_CONFIG.MERGE_MOST_VISITED==true ? "true" : "false") << std::endl;
                 }
             } else if(arg == "force") {
                 // implements are mandatory merge
@@ -168,7 +168,7 @@ refinement_list* interactive(state_merger* merger){
         }
 
         // chosen ref instead of best ref
-        chosen_ref->print_short();
+        chosen_ref->to_short_string();
         std::cerr << " ";
 
         chosen_ref->doref(merger);
@@ -187,7 +187,7 @@ refinement_list* interactive(state_merger* merger){
 
     int size =  merger->get_final_apta_size();
     int red_size = merger->get_num_red_states();
-    std::cout << std::endl << "Found heuristic solution with " << size << " states, of which " << red_size << " are red states." << std::endl;
+    std::cout << std::endl << "Found heuristic convergence with " << size << " states, of which " << red_size << " are red states." << std::endl;
     return all_refs;
 };
 

@@ -15,7 +15,7 @@ void greedy_run(state_merger* merger){
 
     while( best_ref != nullptr ){
         std::cout << " ";
-        best_ref->print_short();
+        best_ref->to_short_string();
         std::cout << " ";
         std::cout.flush();
 
