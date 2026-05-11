@@ -129,7 +129,7 @@ add_library(Source STATIC
         mcts/expansion/FullRule.h
         mcts/Strings.h
         Printer.cpp
-        Printer.hpp
+        printer.h
         config/Config.cpp
         config/MCTSConfig.cpp
         mcts/comparison/ComparisonAlgorithm.cpp

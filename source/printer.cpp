@@ -2,7 +2,7 @@
 // Created by bjorn on 8-5-2026.
 //
 
-#include <Printer.hpp>
+#include <printer.h>
 
 void print_current_automaton(state_merger* merger, const std::string& output_file, const std::string& append_string){
     if (OUTPUT_TYPE == "dot" || OUTPUT_TYPE == "both") {

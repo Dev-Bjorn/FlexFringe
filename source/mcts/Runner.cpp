@@ -2,7 +2,7 @@
 // Created by bjorn on 7-5-2026.
 //
 
-#include <Printer.hpp>
+#include <printer.h>
 #include <state_merger.h>
 #include <input/inputdatalocator.h>
 #include <mcts/MCTS.h>
