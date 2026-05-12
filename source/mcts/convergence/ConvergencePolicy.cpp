@@ -11,7 +11,7 @@
 #include <mcts/convergence/ScoreThresholdConvergence.h>
 
 std::unique_ptr<ConvergencePolicy> createConvergencePolicy(const std::string_view policy, std::shared_ptr<QualityEvaluation> qualityEvaluation, const MCTSConfig &config) {
-    static const std::unordered_map<std::string, std::function<std::unique_ptr<ConvergencePolicy>(std::shared_ptr<QualityEvaluation>)> > table = {
+    const std::unordered_map<std::string, std::function<std::unique_ptr<ConvergencePolicy>(std::shared_ptr<QualityEvaluation>)> > table = {
         {"iterations", [&](std::shared_ptr<QualityEvaluation> eval) { return std::make_unique<IterationConvergence>(std::move(eval), config.MAX_ITERATIONS); }},
         {"score-threshold", [&](std::shared_ptr<QualityEvaluation> eval) { return std::make_unique<ScoreThresholdConvergence>(std::move(eval), config.SCORE_THRESHOLD); }},
         {"score-improvement", [&](std::shared_ptr<QualityEvaluation> eval) { return std::make_unique<ScoreImprovementConvergence>(std::move(eval), config.MAX_NO_IMPROVEMENT); }}

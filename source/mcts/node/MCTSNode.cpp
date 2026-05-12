@@ -42,9 +42,28 @@ bool MCTSNode::isVisited(refinement *refinement) const {
     }
 }
 
+bool equal(refinement* ref1, refinement* ref2) {
+    if (ref1 == ref2) return true;
+    if (ref1->type() != ref2->type()) return false;
+    if (ref1->red->get_number() != ref2->red->get_number()) return false;
+    if (ref1->type() == 3) return true;
+    if (ref1->type() == 2) {
+        auto mr1 = dynamic_cast<const merge_refinement*>(ref1);
+        auto mr2 = dynamic_cast<const merge_refinement*>(ref2);
+        return mr1->blue->get_number() == mr2->blue->get_number();
+    }
+
+}
+
 size_t findIndex(const refinement_vector &refs, const int index, refinement *refinement) {
     if (index < 0 || static_cast<std::size_t>(index) >= refs.size()) {
-        return std::ranges::find(refs, refinement) - refs.begin();
+        for (size_t i = 0; i < refs.size(); ++i) {
+            const auto &ref = refs.at(i);
+            if (equal(ref, refinement)) {
+                return i;
+            }
+        }
+        return refs.size();
     }
     return index;
 }

@@ -15,7 +15,7 @@
 refinement_vector selectNode(const MCTS& mcts) {
     auto node = mcts.select();
 
-    while (node->isTerminal()) {
+    while (!node->isTerminal()) {
         LOG_S(INFO) << "Selected node: " << node->toString() << " with APTA size: " << mcts.getMerger()->get_final_apta_size();
         // AUTO expand when only one unvisited refinement or extend refinement is available
         if (mcts.getConfig().AUTO_EXPAND_ONE_CHILD && (node->getRefinements().size() + node->getExtendRefinements().size()) == 1) {
@@ -31,12 +31,14 @@ refinement_vector selectNode(const MCTS& mcts) {
         const auto log = mcts.rollout(rolloutNode);
         LOG_S(INFO) << "Current Expansion: " << rolloutNode->toString() << " after rollout has size: " << mcts.getMerger()->get_final_apta_size();
 
-        const bool converged = mcts.isConverged(rolloutNode, log);
+        const bool converged = !mcts.getConfig().FORCE_UNTIL_TERMINAL && mcts.isConverged(rolloutNode, log);
 
         mcts.backPropagation(rolloutNode, log);
 
         if (converged) {
-            return mcts.expandLog(node, log);
+            return mcts.expandLog(rolloutNode, log);
+        } else {
+            mcts.eraseRollout(log);
         }
 
         node = mcts.select();
@@ -47,12 +49,12 @@ refinement_vector selectNode(const MCTS& mcts) {
     return mcts.undoNode(node);
 }
 
-std::shared_ptr<AlgorithmResult> getComparisonResult(state_merger* merger, const MCTS& mcts) {
+refinement_vector getComparisonResult(state_merger* merger, const MCTS& mcts) {
     std::unique_ptr<QualityEvaluation> evaluator = createQualityEvaluation(mcts.getConfig().QUALITY_EVALUATOR_POLICY);
-    const std::unique_ptr<ComparisonAlgorithm> algorithm = createAlgorithm(mcts.getConfig().COMPARISON_ALGORITHM, merger, std::move(evaluator));
+    const std::unique_ptr<Algorithm> algorithm = createAlgorithm(mcts.getConfig().COMPARISON_ALGORITHM, merger, std::move(evaluator), mcts.getNodeFactory());
     LOG_S(INFO) << "Comparison Algorithm Prepared";
     LOG_S(INFO) << "Starting Comparison Algorithm";
-    return  algorithm->run(mcts.getRoot());
+    return  algorithm->run(mcts.getRoot(), AlgorithmType::comparison);
 }
 
 
@@ -62,16 +64,16 @@ void applyRefinements(state_merger* merger, const refinement_vector &log) {
     }
 }
 
-void printTree(const MCTS& mcts, const std::shared_ptr<AlgorithmResult> &result) {
+void printTree(const MCTS& mcts) {
     std::cout << "Start tree printing to " << OUTPUT_FILE << ".mcts_tree.dot" << std::endl;
 
     std::ofstream output((OUTPUT_FILE + ".mcts_tree.dot").c_str());
-    DotPrinter printer(result, output, mcts.getConfig());
+    DotPrinter printer(output, mcts.getConfig());
     printer.print(mcts.getRoot());
     output.close();
 
     std::ofstream outputJson((OUTPUT_FILE + ".mcts_tree.json").c_str());
-    JSONPrinter jsonPrinter(result, outputJson, mcts.getConfig());
+    JSONPrinter jsonPrinter(outputJson, mcts.getConfig());
     jsonPrinter.print(mcts.getRoot());
     outputJson.close();
 
@@ -152,7 +154,7 @@ void runMCTS(std::unordered_map<std::string, std::tuple<state_merger*, evaluatio
     applyRefinements(mcts_state_merger, refinements);
     print_current_automaton(mcts_state_merger, mcts_file, ".final");
 
-    printTree(mcts, result);
+    printTree(mcts);
 
     LOG_S(INFO) << "MCTS run finished";
     std::cout << "MCTS finished" << std::endl;

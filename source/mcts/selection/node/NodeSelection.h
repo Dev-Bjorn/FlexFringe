@@ -4,6 +4,7 @@
 
 #ifndef FLEXFRINGE_NODE_SELECTION_POLICY_H
 #define FLEXFRINGE_NODE_SELECTION_POLICY_H
+#include <config/MCTSConfig.h>
 #include <mcts/node/MCTSNode.h>
 
 /**

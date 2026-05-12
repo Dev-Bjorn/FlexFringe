@@ -6,9 +6,10 @@
 #define FLEXFRINGE_MCTS_NODE_H
 #include <memory>
 #include <refinement.h>
-#include <state_merger.h>
 #include <vector>
+#include <mcts/AlgorithmTypes.h>
 #include <mcts/propagate/data/NodeData.h>
+
 
 struct MCTSNode {
 private:
@@ -18,6 +19,7 @@ private:
     refinement *currentRef = nullptr;
     double score = -1;
     int dfaSize;
+    std::unordered_set<AlgorithmType> nodeType;
 
     // --------------------- ACTIONS ----------------------
     // All possible actions that follow from this node are stored in the node
@@ -58,6 +60,8 @@ public:
     [[nodiscard]] inline const refinement_vector& getExtendRefinements()      const { return extendRefs; }
     [[nodiscard]] inline refinement_vector getUnvisitedRefinements()          const { return unvisitedRefs; }
     [[nodiscard]] inline refinement_vector getUnvisitedExtendRefinements()    const { return unvisitedExtendRefs; };
+    [[nodiscard]] inline bool isInAlgorithm(AlgorithmType algorithm) const { return nodeType.contains(algorithm); };
+    [[nodiscard]] inline int getAlgorithmTypes() const { return encodeAlgorithmType(nodeType); };
 
     // This means all states are colored red
     bool isTerminal() const;
@@ -76,6 +80,10 @@ public:
     std::string toString() const;
 
     void setScore(double score);
+
+    void annotate(const AlgorithmType algorithm) {
+        nodeType.insert(algorithm);
+    }
 
 };
 

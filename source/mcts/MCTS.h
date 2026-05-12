@@ -16,7 +16,7 @@ private:
     MCTSConfig config;
     state_merger *merger;
     std::shared_ptr<MCTSNode> root;
-    std::unique_ptr<MCTSNodeFactory> nodeFactory;
+    std::shared_ptr<MCTSNodeFactory> nodeFactory;
 
     // Selection Fields
     std::unique_ptr<SelectionSearchPolicy> selectionPolicy;
@@ -41,6 +41,10 @@ public:
         return root;
     }
 
+    std::shared_ptr<MCTSNodeFactory> getNodeFactory() const {
+        return nodeFactory;
+    }
+
     MCTSConfig getConfig() const {
         return config;
     }
@@ -58,6 +62,10 @@ public:
     refinement_vector rollout(const std::shared_ptr<MCTSNode> &rolloutNode) const;
 
     void backPropagation(const std::shared_ptr<MCTSNode> &rolloutNode, const refinement_vector &log) const;
+
+    static void eraseRollout(const refinement_vector &log);
+
+    refinement_vector finishExpansion(const std::shared_ptr<MCTSNode> &lastChild, refinement_vector &log) const;
 
     refinement_vector expandLog(const std::shared_ptr<MCTSNode> &node, const refinement_vector &expansionLog) const;
 

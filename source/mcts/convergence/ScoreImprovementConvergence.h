@@ -11,8 +11,7 @@
  */
 struct ScoreImprovementConvergence : ConvergencePolicy {
 private:
-    int maxNoImprovementIterations;
-    int iteration = 0;
+    unsigned int maxNoImprovementIterations;
 
 public:
     explicit ScoreImprovementConvergence(std::shared_ptr<QualityEvaluation> qualityEvaluation, const int maxNoImprovementIterations) : ConvergencePolicy(std::move(qualityEvaluation)), maxNoImprovementIterations(maxNoImprovementIterations) {

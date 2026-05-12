@@ -3,13 +3,15 @@
 //
 
 
+#include <functional>
+#include <unordered_map>
 #include <mcts/Strings.h>
 #include <mcts/selection/node/NodeSelection.h>
 #include <mcts/selection/node/LCB1SelectionPolicy.h>
 #include <mcts/selection/node/UCB1SelectionPolicy.h>
 
 std::shared_ptr<NodeSelectionPolicy> createNodeSelectionPolicy(const std::string_view policy, const MCTSConfig& config) {
-    static const std::unordered_map<std::string, std::function<std::unique_ptr<NodeSelectionPolicy>()>> table = {
+    const std::unordered_map<std::string, std::function<std::unique_ptr<NodeSelectionPolicy>()>> table = {
         {"lcb1", [&]() { return std::make_unique<LCB1SelectionPolicy>(config.LCB1_CONSTANT); }},
         {"ucb1", [&]() { return std::make_unique<UCB1SelectionPolicy>(config.UCB1_CONSTANT); }},
     };

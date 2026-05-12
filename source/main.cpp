@@ -41,28 +41,28 @@ bool debugging_enabled = false;
  * Input parameters, see 'man popt'
  */
 
-evaluation_function* get_evaluation(std::string heuristic_name){
+evaluation_function *get_evaluation(std::string heuristic_name) {
     evaluation_function *eval = nullptr;
-    if(debugging_enabled){
-        for(auto & myit : *DerivedRegister<evaluation_function>::getMap()) {
+    if (debugging_enabled) {
+        for (auto &myit: *DerivedRegister<evaluation_function>::getMap()) {
             std::cout << myit.first << " " << myit.second << std::endl;
         }
     }
     try {
         eval = (DerivedRegister<evaluation_function>::getMap())->at(heuristic_name)();
         std::cout << "Using heuristic " << heuristic_name << std::endl;
-        LOG_S(INFO) <<  "Using heuristic " << heuristic_name;
-    } catch(const std::out_of_range& oor ) {
+        LOG_S(INFO) << "Using heuristic " << heuristic_name;
+    } catch (const std::out_of_range &oor) {
         LOG_S(WARNING) << "No named heuristic found, defaulting back on -h flag";
         std::cerr << "No named heuristic found, defaulting back on -h flag" << std::endl;
     }
     return eval;
 }
 
-void read_input_file(inputdata* id) {
+void read_input_file(inputdata *id) {
     std::ifstream input_stream(INPUT_FILE);
 
-    if(!input_stream) {
+    if (!input_stream) {
         LOG_S(ERROR) << "Input file not found, aborting";
         std::cerr << "Input file not found, aborting" << std::endl;
         exit(-1);
@@ -71,51 +71,53 @@ void read_input_file(inputdata* id) {
     }
 
     bool read_csv = false;
-    if(INPUT_FILE.ends_with(".csv")){
+    if (INPUT_FILE.ends_with(".csv")) {
         read_csv = true;
     }
 
     std::unique_ptr<parser> parser;
-    if(read_csv) {
+    if (read_csv) {
         parser = std::make_unique<csv_parser>(input_stream, csv::CSVFormat().trim({' '}));
     } else {
         parser = std::make_unique<abbadingoparser>(input_stream);
     }
 
     if (SLIDING_WINDOW) {
-        id->read_slidingwindow(parser.get(),
-                               SLIDING_WINDOW_SIZE,
-                               SLIDING_WINDOW_STRIDE,
-                               SLIDING_WINDOW_TYPE);
+        id->read_slidingwindow(
+            parser.get(),
+            SLIDING_WINDOW_SIZE,
+            SLIDING_WINDOW_STRIDE,
+            SLIDING_WINDOW_TYPE
+        );
     } else {
         id->read(parser.get());
     }
 }
 
-void runMCTS(inputdata& id, std::unordered_map<std::string, evaluation_function*>& evals) {
+void runMCTS(inputdata &id, std::unordered_map<std::string, evaluation_function *> &evals) {
     std::cout << "MCTS mode selected" << std::endl;
 
-    if(OUTPUT_FILE.empty()) OUTPUT_FILE = INPUT_FILE + ".ff";
+    if (OUTPUT_FILE.empty()) OUTPUT_FILE = INPUT_FILE + ".ff";
 
-    apta* the_apta = new apta();
-    std::unordered_map<std::string, std::tuple<state_merger*, evaluation_function*>> merger_evals{};
+    apta *the_apta = new apta();
+    std::unordered_map<std::string, std::tuple<state_merger *, evaluation_function *> > merger_evals{};
 
 
     std::cout << "Creating apta and state mergers." << std::endl;
-    for (auto& [key, eval] : evals) {
+    for (auto &[key, eval]: evals) {
         if (!ACTIVE_HEURISTICS.contains(key)) continue;
-        state_merger* merger = new state_merger(&id, eval, the_apta);
+        state_merger *merger = new state_merger(&id, eval, the_apta);
         eval->set_context(merger);
         merger_evals[key] = std::make_tuple(merger, eval);
     }
 
-    for (auto& [k, eval] : evals) {
+    for (auto &[k, eval]: evals) {
         if (!ACTIVE_HEURISTICS.contains(k)) continue;
         CURRENT_CONFIG = getConfiguration(k);
         eval->initialize_before_adding_traces();
     }
     id.add_traces_to_apta(the_apta);
-    for (auto [k, v] : merger_evals) {
+    for (auto [k, v]: merger_evals) {
         if (!ACTIVE_HEURISTICS.contains(k)) continue;
         auto [merger, eval] = v;
         CURRENT_CONFIG = getConfiguration(k);
@@ -125,7 +127,7 @@ void runMCTS(inputdata& id, std::unordered_map<std::string, evaluation_function*
     runMCTS(merger_evals);
 
     // clean up
-    for (auto [merger, eval] : merger_evals | std::views::values) {
+    for (auto [merger, eval]: merger_evals | std::views::values) {
         delete merger;
         delete eval;
     }
@@ -144,19 +146,18 @@ void runMCTS(inputdata& id, std::unordered_map<std::string, evaluation_function*
  * @param param The parameters.
  */
 void run() {
-
-    if(OUTPUT_FILE.empty()) OUTPUT_FILE = INPUT_FILE + ".ff";
+    if (OUTPUT_FILE.empty()) OUTPUT_FILE = INPUT_FILE + ".ff";
 
     inputdata id;
     inputdata_locator::provide(&id);
 
-    if(OPERATION_MODE != "streaming" && OPERATION_MODE != "predict"){
+    if (OPERATION_MODE != "streaming" && OPERATION_MODE != "predict") {
         read_input_file(&id);
     }
 
     if (OPERATION_MODE == "mcts") {
-        std::unordered_map<std::string, evaluation_function*> evals;
-        for (const auto& cfg : HEURISTIC_CONFIGS) {
+        std::unordered_map<std::string, evaluation_function *> evals;
+        for (const auto &cfg: HEURISTIC_CONFIGS) {
             evals[cfg.CONFIG_NAME] = get_evaluation(cfg.HEURISTIC_NAME);
         }
         runMCTS(id, evals);
@@ -164,14 +165,14 @@ void run() {
         return;
     }
 
-    apta* the_apta = new apta();
+    apta *the_apta = new apta();
     evaluation_function *eval = get_evaluation(CURRENT_CONFIG.HEURISTIC_NAME);
-    auto* merger = new state_merger(&id, eval, the_apta);
+    auto *merger = new state_merger(&id, eval, the_apta);
     eval->set_context(merger);
 
-    std::cout << "Creating apta " <<  "using evaluation class " << CURRENT_CONFIG.HEURISTIC_NAME << std::endl;
+    std::cout << "Creating apta " << "using evaluation class " << CURRENT_CONFIG.HEURISTIC_NAME << std::endl;
 
-    if(OPERATION_MODE == "batch" || OPERATION_MODE == "greedy") {
+    if (OPERATION_MODE == "batch" || OPERATION_MODE == "greedy") {
         std::cout << "batch mode selected" << std::endl;
 
         eval->initialize_before_adding_traces();
@@ -184,7 +185,7 @@ void run() {
         greedy_run(merger);
 
         print_current_automaton(merger, OUTPUT_FILE, ".final");
-    } else if(OPERATION_MODE == "satsolver") {
+    } else if (OPERATION_MODE == "satsolver") {
         std::cout << "satsolver mode selected" << std::endl;
 
         eval->initialize_before_adding_traces();
@@ -192,19 +193,18 @@ void run() {
         eval->initialize_after_adding_traces(merger);
         LOG_S(INFO) << "Satsolver mode selected, starting run";
 
-        if(SAT_RUN_GREEDY) greedy_run(merger);
+        if (SAT_RUN_GREEDY) greedy_run(merger);
 
         run_dfasat(merger, SAT_SOLVER, -1);
 
         print_current_automaton(merger, OUTPUT_FILE, ".final");
-    } else if(OPERATION_MODE == "stream") {
+    } else if (OPERATION_MODE == "stream") {
         std::cout << "stream mode selected" << std::endl;
         LOG_S(INFO) << "Stream mode selected, starting run";
 
         stream_object stream_obj;
         throw std::logic_error("Streaming mode is currently broken");
-
-    } else if(OPERATION_MODE == "search") {
+    } else if (OPERATION_MODE == "search") {
         std::cout << "search mode selected" << std::endl;
         eval->initialize_before_adding_traces();
         id.add_traces_to_apta(the_apta);
@@ -214,7 +214,7 @@ void run() {
         bestfirst(merger);
 
         print_current_automaton(merger, OUTPUT_FILE, ".final");
-    } else if(OPERATION_MODE == "bagging") {
+    } else if (OPERATION_MODE == "bagging") {
         std::cout << "bagging mode selected" << std::endl;
 
         eval->initialize_before_adding_traces();
@@ -222,8 +222,8 @@ void run() {
         eval->initialize_after_adding_traces(merger);
         LOG_S(INFO) << "Bagging mode selected, starting run";
 
-        bagging(merger, OUTPUT_FILE,10);
-    } else if(OPERATION_MODE == "interactive") {
+        bagging(merger, OUTPUT_FILE, 10);
+    } else if (OPERATION_MODE == "interactive") {
         std::cout << "interactive mode selected" << std::endl;
 
         eval->initialize_before_adding_traces();
@@ -234,12 +234,11 @@ void run() {
         interactive(merger);
 
         print_current_automaton(merger, OUTPUT_FILE, ".final");
-    } else if(OPERATION_MODE == "predict") {
+    } else if (OPERATION_MODE == "predict") {
         std::cout << "predict mode selected" << std::endl;
         LOG_S(INFO) << "Predict mode selected, starting run";
 
-        if(!APTA_FILE.empty()){
-
+        if (!APTA_FILE.empty()) {
             // First, we read the apta file into the global inputdata, so we can obtain the alphabet mapping
             std::ifstream input_apta_stream(APTA_FILE);
             std::cerr << "reading apta file - " << APTA_FILE << std::endl;
@@ -247,7 +246,7 @@ void run() {
 
             // Setup output file stream
             std::ostringstream res_stream;
-            res_stream << APTA_FILE << ".result";// << ".dot";
+            res_stream << APTA_FILE << ".result"; // << ".dot";
             std::ofstream output(res_stream.str().c_str());
             std::fstream output2(res_stream.str().c_str(), std::ios_base::out);
 
@@ -257,7 +256,7 @@ void run() {
             // Set up the parser for the input stream
             std::ifstream input_stream(INPUT_FILE);
             std::unique_ptr<parser> parser;
-            if(INPUT_FILE.ends_with(".csv")) {
+            if (INPUT_FILE.ends_with(".csv")) {
                 parser = std::make_unique<csv_parser>(input_stream, csv::CSVFormat().trim({' '}));
             } else {
                 parser = std::make_unique<abbadingoparser>(input_stream);
@@ -280,16 +279,16 @@ void run() {
         } else {
             std::cerr << "require a json formatted apta file to make predictions" << std::endl;
         }
-    } else if(OPERATION_MODE == "diff") {
+    } else if (OPERATION_MODE == "diff") {
         std::cout << "behavioral differencing mode selected" << std::endl;
         LOG_S(INFO) << "Diff mode selected, starting run";
 
-        if(!APTA_FILE.empty() && !APTA_FILE2.empty()){
+        if (!APTA_FILE.empty() && !APTA_FILE2.empty()) {
             std::ifstream input_apta_stream(APTA_FILE);
             std::cerr << "reading apta file - " << APTA_FILE << std::endl;
             the_apta->read_json(input_apta_stream);
 
-            apta* the_apta2 = new apta();
+            apta *the_apta2 = new apta();
             std::ifstream input_apta_stream2(APTA_FILE2);
             std::cerr << "reading apta file - " << APTA_FILE2 << std::endl;
             the_apta2->read_json(input_apta_stream2);
@@ -301,9 +300,9 @@ void run() {
             std::cerr << "require two json formatted apta files to compare" << std::endl;
         }
     } else {
-       LOG_S(ERROR) << "Unknown mode of operation selected, please chose batch, stream, or inter. Provided was " << OPERATION_MODE;
-       std::cerr << R"(unknown mode of operation selected, valid options are "batch", "stream", and "inter", while the parameter provided was )" << OPERATION_MODE << std::endl;
-       exit(1);
+        LOG_S(ERROR) << "Unknown mode of operation selected, please chose batch, stream, or inter. Provided was " << OPERATION_MODE;
+        std::cerr << R"(unknown mode of operation selected, valid options are "batch", "stream", and "inter", while the parameter provided was )" << OPERATION_MODE << std::endl;
+        exit(1);
     }
 
     delete merger;
@@ -315,24 +314,24 @@ void run() {
  *
  */
 #ifndef UNIT_TESTING
-int main(int argc, char *argv[]){
-
-    for(int i = 0; i < argc; i++) {
-      COMMAND_LINE += std::string(argv[i]) + std::string(" ");
+int main(int argc, char *argv[]) {
+    for (int i = 0; i < argc; i++) {
+        COMMAND_LINE += std::string(argv[i]) + std::string(" ");
     }
 
     //cout << "welcome, running git commit " << gitversion <<  " with: "<< param->command << endl;
 
     // CLI11-based parameter parsing to replace libpopt
     // https://cliutils.gitlab.io/CLI11Tutorial/
-    CLI::App app{"flexFringe"
-                 "Copyright 2022 Sicco Verwer, Delft University of Technology"
-                 "with contributions from Christian Hammerschmidt, Delft University of Technology,\
+    CLI::App app{
+        "flexFringe"
+        "Copyright 2022 Sicco Verwer, Delft University of Technology"
+        "with contributions from Christian Hammerschmidt, Delft University of Technology,\
                   University of Luxembourg"
-                 "with contributions from APTA Technologies B.V."
-                 "based on"
-                 "DFASAT with random greedy preprocessing"
-                 "Copyright 2015 Sicco Verwer and Marijn Heule, Delft University of Technology."
+        "with contributions from APTA Technologies B.V."
+        "based on"
+        "DFASAT with random greedy preprocessing"
+        "Copyright 2015 Sicco Verwer and Marijn Heule, Delft University of Technology."
     };
 
     std::vector<std::string> active_heuristics;
@@ -405,7 +404,6 @@ int main(int argc, char *argv[]){
     app.add_option("--diffmin", DIFF_MIN, "The minimum score for the behavioral difference of a sampled trace. Default=-100.");
 
 
-
     // MCTS options
     auto mcts_cmd = app.add_subcommand("mcts", "Add MCTS configuration");
     mcts_cmd->configurable();
@@ -414,10 +412,14 @@ int main(int argc, char *argv[]){
     mcts_cmd->add_option("--max-iterations", MCTS_CONFIG.MAX_ITERATIONS, "Maximum number of iterations, the convergence policies contains 'iteration'. Default: 1000.");
     mcts_cmd->add_option("--score-threshold", MCTS_CONFIG.SCORE_THRESHOLD, "Score threshold for stopping MCTS, the convergence policies contains 'score-threshold'. Default: 0.0.");
     mcts_cmd->add_option("--max-no-improvement", MCTS_CONFIG.MAX_NO_IMPROVEMENT, "Maximum number of iterations without improvement, the convergence policies contains 'score-improvement'. Default: 100.");
+    mcts_cmd->add_option("--use-finisher", MCTS_CONFIG.USE_FINISHER, "Use a finisher when convergence, by a defined convergence policy, is reached and the DFA is not yet in a terminal state. Default: true.");
+    mcts_cmd->add_option("--finisher-algorithm", MCTS_CONFIG.FINISH_ALGORITHM, "The policy that determines which action to take during the finisher. Default: greedy.");
+    mcts_cmd->add_option("--force-until-terminal", MCTS_CONFIG.FORCE_UNTIL_TERMINAL, "Whether to force MCTS to continue until the DFA reaches a terminal state, regardless of convergence. Default: false.");
 
     mcts_cmd->add_option("--auto-expand-one-child", MCTS_CONFIG.AUTO_EXPAND_ONE_CHILD, "If true, automatically expand one child during rollout. Default: true.");
     mcts_cmd->add_option("--expansion-action-seed", MCTS_CONFIG.EXPANSION_ACTION_SEED, "Seed for roulette action policy. Default: 42.");
     mcts_cmd->add_option("--expansion-rule-policy", MCTS_CONFIG.EXPANSION_RULE_POLICY, "The policy that determines whether a node can be expanded for MCTS. Default: full.");
+    mcts_cmd->add_option("--expansion-action-policy", MCTS_CONFIG.EXPANSION_ACTION_POLICY, "The policy that determines which action to take during expansion. Default: first.");
 
     mcts_cmd->add_option("--max-rollout-steps", MCTS_CONFIG.MAX_ROLLOUT_STEPS, "Maximum number of rollout steps. Default: 1000.");
     mcts_cmd->add_option("--rollout-action-policy", MCTS_CONFIG.ROLLOUT_ACTION_POLICY, "The policy that determines which action to take during rollout. Default: uniform.");
@@ -439,23 +441,25 @@ int main(int argc, char *argv[]){
 
 
     HeuristicConfig current;
-    auto* hcmd = app.add_subcommand("heuristic", "Add a heuristic configuration");
+    auto *hcmd = app.add_subcommand("heuristic", "Add a heuristic configuration");
     app.needs(hcmd);
-    hcmd->callback([&]() {
-        if (current.CONFIG_NAME.empty()) {
-            current.CONFIG_NAME = current.HEURISTIC_NAME;
-        }
+    hcmd->callback(
+        [&]() {
+            if (current.CONFIG_NAME.empty()) {
+                current.CONFIG_NAME = current.HEURISTIC_NAME;
+            }
 
-        std::cout << "Adding heuristic: " << current.CONFIG_NAME << std::endl;
-        HEURISTIC_CONFIGS.push_back(current);
-        current = HeuristicConfig{};
-    });
+            std::cout << "Adding heuristic: " << current.CONFIG_NAME << std::endl;
+            HEURISTIC_CONFIGS.push_back(current);
+            current = HeuristicConfig{};
+        }
+    );
     hcmd->configurable();
     hcmd->immediate_callback();
 
     hcmd->add_option("--name", current.CONFIG_NAME, "The name of the current configuration, if not provided uses the heuristic name.");
     hcmd->add_option("--heuristic-name,--heuristic_name", current.HEURISTIC_NAME, "Name of the merge heuristic to use; default count_driven. Use any heuristic in the evaluation directory. It is often beneficial to write your own, as heuristics are very application specific.")->required();
-    hcmd->add_option("--data-name,--data_name",current.DATA_NAME, "Name of the merge data class to use; default count_data. Use any heuristic in the evaluation directory.");
+    hcmd->add_option("--data-name,--data_name", current.DATA_NAME, "Name of the merge data class to use; default count_data. Use any heuristic in the evaluation directory.");
     hcmd->add_option("--random", current.RANDOMIZE_SCORES, "Amount of randomness r to include in merging heuristic. Each merge score s is modified to (s - s*random(0,r)). Default=0.");
 
     hcmd->add_option("--extend", current.EXTEND_ANY_RED, "When set to 1, any merge candidate (blue) that cannot be merged with any target (red) is immediately changed into a (red) target; default=1. If set to 0, a merge candidate is only changed into a target when no more merges are possible. Advice: unclear which strategy is best, when using statistical (or count-based) consistency checks, keep in mind that merge consistency between states may change due to other performed merges. This will especially influence low frequency states. When there are a lot of those, we therefore recommend setting x=0.");
@@ -524,13 +528,12 @@ int main(int argc, char *argv[]){
     }
 
     if (active_heuristics.empty()) {
-        for (auto& h : HEURISTIC_CONFIGS) {
+        for (auto &h: HEURISTIC_CONFIGS) {
             ACTIVE_HEURISTICS.insert(h.CONFIG_NAME);
         }
     } else {
         ACTIVE_HEURISTICS = std::unordered_set(active_heuristics.begin(), active_heuristics.end());
     }
-
 
 
     loguru::g_stderr_verbosity = loguru::Verbosity_OFF;

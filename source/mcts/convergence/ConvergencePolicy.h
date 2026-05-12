@@ -11,7 +11,8 @@
 struct ConvergencePolicy {
 protected:
     std::shared_ptr<QualityEvaluation> evaluator;
-    int bestScore = std::numeric_limits<int>::infinity();
+    size_t iteration = 0;
+    int bestScore = std::numeric_limits<int>::max();
     std::shared_ptr<MCTSNode> bestNode;
     refinement_vector bestRefinements;
 

@@ -132,8 +132,8 @@ add_library(Source STATIC
         printer.h
         config/Config.cpp
         config/MCTSConfig.cpp
-        mcts/comparison/ComparisonAlgorithm.cpp
-        mcts/comparison/ComparisonAlgorithm.h
+        mcts/comparison/Algorithm.cpp
+        mcts/comparison/Algorithm.h
         mcts/comparison/Greedy.cpp
         mcts/comparison/Greedy.h
         mcts/expansion/SingleExtendRule.cpp
@@ -159,6 +159,8 @@ add_library(Source STATIC
         mcts/convergence/ScoreThresholdConvergence.h
         mcts/convergence/ScoreImprovementConvergence.cpp
         mcts/convergence/ScoreImprovementConvergence.h
+        mcts/AlgorithmTypes.h
+        mcts/AlgorithmTypes.cpp
 )
 
 ## create CMakeLists.txt in evaluation directory

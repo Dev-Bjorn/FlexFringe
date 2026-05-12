@@ -4,16 +4,16 @@
 
 #include "Greedy.h"
 
-refinement *GreedyAlgorithm::getRefinement(const refinement_vector &refs, const refinement_vector &extendRefs) const {
+refinement *GreedyAlgorithm::getRefinement(const std::shared_ptr<MCTSNode>& node) const {
     // Base Case
-    if (refs.empty() && extendRefs.empty()) return nullptr;
-    if (refs.empty()) {
-        return extendRefs[0];
+    if (node->isTerminal()) return nullptr;
+    if (node->getRefinements().empty()) {
+        return node->getExtendRefinements()[0];
     }
 
     refinement *bestRef = nullptr;
 
-    for (const auto ref: refs) {
+    for (const auto ref: node->getRefinements()) {
         if (bestRef == nullptr || comparator(ref, bestRef)) {
             bestRef = ref;
         }
@@ -22,18 +22,19 @@ refinement *GreedyAlgorithm::getRefinement(const refinement_vector &refs, const 
     return bestRef;
 }
 
-refinement_vector GreedyAlgorithm::getRefinements(const std::shared_ptr<MCTSNode> &root) const {
+refinement_vector GreedyAlgorithm::updateRefinements(const std::shared_ptr<MCTSNode> &root) const {
     auto refs = root->getRefinements();
     auto extendRefs = root->getExtendRefinements();
 
     refinement_vector greedyPicks{};
 
     auto node = root;
+    annotateNode(node);
 
     LOG_S(INFO) << "Greedy picking refinements";
 
     while (!MCTSNode::isTerminal(refs, extendRefs)) {
-        auto ref = getRefinement(refs, extendRefs);
+        auto ref = getRefinement(node);
 
         if (ref == nullptr) break;
 
@@ -42,18 +43,19 @@ refinement_vector GreedyAlgorithm::getRefinements(const std::shared_ptr<MCTSNode
         ref->doref(merger);
 
         if (auto child = getChild(node, ref); node != nullptr && child != nullptr) {
-            refs = child->getRefinements();
-            extendRefs = child->getExtendRefinements();
             node = child;
         } else {
             auto [newRefs, newExtendRefs] = merger->get_refinements();
-            refs = newRefs;
-            extendRefs = newExtendRefs;
-            node = nullptr;
+            const auto newChild = factory->create(ref, merger->get_final_apta_size(), newRefs, newExtendRefs, node);
+            node->expand(newChild, -1);
+            node = newChild;
         }
 
+        annotateNode(node);
         greedyPicks.push_back(ref);
     }
+
+    node->setScore(evaluator->evaluate(merger));
 
     LOG_S(INFO) << "Greedy picking done";
     return greedyPicks;

@@ -2,6 +2,7 @@
 // Created by bjorn on 9-5-2026.
 //
 
+#include <functional>
 #include <mcts/Strings.h>
 #include <mcts/selection/BFSSearch.h>
 #include <mcts/selection/ChildVSParentSearch.h>
@@ -17,7 +18,7 @@ std::unique_ptr<SelectionSearchPolicy> createSelectionSearchPolicy(
     std::shared_ptr<NodeSelectionPolicy> selection_policy,
     std::shared_ptr<ExpansionRulePolicy> expansion_rule_policy
 ) {
-    static const std::unordered_map<std::string, SelectionPolicyFactory> table = {
+    const std::unordered_map<std::string, SelectionPolicyFactory> table = {
         {
             "bfs",
             [](std::shared_ptr<NodeSelectionPolicy> node, std::shared_ptr<ExpansionRulePolicy> rule) {

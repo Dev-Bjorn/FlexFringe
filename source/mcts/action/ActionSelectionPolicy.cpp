@@ -14,7 +14,7 @@
 #include <mcts/action/UniformAction.h>
 
 std::unique_ptr<ActionSelectionPolicy> createActionPolicy(const std::string_view policy, const MCTSConfig &config) {
-    static const std::unordered_map<std::string, std::function<std::unique_ptr<ActionSelectionPolicy>()> > table = {
+    const std::unordered_map<std::string, std::function<std::unique_ptr<ActionSelectionPolicy>()> > table = {
         {"first", [&]() -> std::unique_ptr<ActionSelectionPolicy> { return std::make_unique<FirstAction>(); }},
         {"weighted-merge-split-first", [&]() -> std::unique_ptr<ActionSelectionPolicy> { return std::make_unique<WeightedMergeSplitFirst>(config.ROLLOUT_ACTION_SEED); }},
         {"uniform-merge-split-first", [&]() -> std::unique_ptr<ActionSelectionPolicy> { return std::make_unique<UniformMergeSplitFirst>(config.ROLLOUT_ACTION_SEED); }},

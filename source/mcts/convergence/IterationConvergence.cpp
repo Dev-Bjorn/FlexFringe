@@ -10,6 +10,7 @@ bool IterationConvergence::isConverged(const state_merger * merger, const std::s
     }
 
     if (const double x = evaluator->evaluate(merger); evaluator->compare(x, bestScore)) {
+        LOG_S(INFO) << "Iteration detected, updating best score and refinements at iteration: " << iteration;
         this->bestScore = x;
         this->bestNode = expansion;
         this->bestRefinements = refinements;

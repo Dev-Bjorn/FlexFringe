@@ -22,14 +22,20 @@ struct MCTSConfig {
      // MCTS will always stop the algorithm when the selection policy selects a terminal node.
      //
      // The available convergence policies are: "iteration", "score-threshold", "score-improvement"
-     std::vector<std::string> CONVERGENCE_POLICIES;
+     std::vector<std::string> CONVERGENCE_POLICIES = {};
      // The maximum number of iterations for MCTS, only works when CONVERGENCE_POLICIES contains "iteration"
      int MAX_ITERATIONS = 1000;
      // The threshold score for MCTS, only works when CONVERGENCE_POLICIES contains "score-threshold"
      double SCORE_THRESHOLD = 0.0;
      // The maximum number of iterations without improvement for MCTS, only works when CONVERGENCE_POLICIES contains "score-improvement"
      int MAX_NO_IMPROVEMENT = 100;
-
+     // Whether to finish using greedy policy when the number of iterations reaches MAX_ITERATIONS, when the
+     // convergence policy is hit and the DFA is not in a terminal state
+     bool USE_FINISHER = true;
+     // The algorithm to use when finishing the algorithm, only works when USE_FINISHER is true
+     std::string FINISH_ALGORITHM = "greedy";
+     // Whether to force MCTS to continue until the DFA reaches a terminal state, regardless of convergence
+     bool FORCE_UNTIL_TERMINAL = false;
 
      // whether to print the unexpanded nodes
      bool PRINT_UNVISITED = false;

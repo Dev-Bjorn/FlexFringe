@@ -11,16 +11,15 @@
 
 struct DotPrinter : MCTSPrinter {
 protected:
-    std::shared_ptr<ExpansionRulePolicy> expansionRulePolicy;
     std::queue<std::shared_ptr<MCTSNode>> queue;
 
-    std::string getNodeColor(const NodeInfo &node) const;
+    std::string getNodeColor(const std::shared_ptr<MCTSNode> &node) const;
 
-    void print_label(const NodeInfo &info) const;
+    void print_label(const std::shared_ptr<MCTSNode> &info) const;
 
-    void print_attributes(const NodeInfo &info);
+    void print_attributes(const std::shared_ptr<MCTSNode> &info);
 
-    void print_node(const NodeInfo &info);
+    void print_node(const std::shared_ptr<MCTSNode> &info);
 
     void print_edge(int from, int to, int visits) const;
 
@@ -28,11 +27,9 @@ protected:
 
     void print_unvisited(const std::shared_ptr<MCTSNode> &node);
 
-    void rolloutComparison(const std::shared_ptr<MCTSNode> &node);
 
 public:
-    explicit DotPrinter(const std::shared_ptr<AlgorithmResult> &result, std::ofstream &output, const MCTSConfig& config) : MCTSPrinter(result, output, config) {
-        expansionRulePolicy = createExpansionRulePolicy(config.EXPANSION_RULE_POLICY);
+    explicit DotPrinter(std::ofstream &output, const MCTSConfig& config) : MCTSPrinter(output, config) {
     }
 
     void print(const std::shared_ptr<MCTSNode> &node) override;

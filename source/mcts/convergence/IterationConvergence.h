@@ -12,7 +12,6 @@
 struct IterationConvergence : ConvergencePolicy {
 private:
     unsigned int maxIteration;
-    unsigned int iteration = 0;
 
 public:
     explicit IterationConvergence(std::shared_ptr<QualityEvaluation> qualityEvaluation, const unsigned int maxIteration) : ConvergencePolicy(std::move(qualityEvaluation)), maxIteration(maxIteration) {

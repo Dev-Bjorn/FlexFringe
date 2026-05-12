@@ -23,20 +23,20 @@ void JSONPrinter::print_attributes(std::unordered_map<std::string, std::string> 
     }
 }
 
-void JSONPrinter::print_node(const NodeInfo &info, const int depth) {
+void JSONPrinter::print_node(const std::shared_ptr<MCTSNode> &node, const int depth) {
     std::unordered_map<std::string, std::string> attributeMap = {
-        {"id", std::to_string(info.id)},
-        {"score", std::to_string(info.score)},
-        {"dfaSize", std::to_string(info.dfaSize)},
-        {"refinement", "\"" + getRefinementName(info.ref) + "\""},
-        {"involvedNodes", "[" + involvedRefinementNodes(info.ref) + "]"},
-        {"refVisits", std::to_string(visits(info.ref))},
-        {"refScore", std::to_string(info.ref->score)},
-        {"isGreedyNode", std::to_string(info.isGreedyNode)},
-        {"isVisited", std::to_string(!info.isUnvisited)},
-        {"isTerminal", std::to_string(info.isTerminal())},
-        {"isExpandable", std::to_string(info.isExpandable())},
-        {"hasOnlyVisitedMerges", std::to_string(info.hasMergeRefinements() && !info.hasUnexpandedMerges())},
+        {"id", std::to_string(node->getId())},
+        {"score", std::to_string(node->getScore())},
+        {"dfaSize", std::to_string(node->getDFASize())},
+        {"refinement", "\"" + getRefinementName(node->getRefinement()) + "\""},
+        {"involvedNodes", "[" + involvedRefinementNodes(node->getRefinement()) + "]"},
+        {"refVisits", std::to_string(visits(node->getRefinement()))},
+        {"refScore", std::to_string(node->getRefinement()->score)},
+        {"nodeTypes", std::to_string(node->getAlgorithmTypes())},
+        {"isVisited", std::to_string(node->getId() >= 0)},
+        {"isTerminal", std::to_string(node->isTerminal())},
+        {"isExpandable", std::to_string(expansionRulePolicy->isExpandable(node))},
+        {"exhaustedMerges", std::to_string(node->getUnvisitedRefinements().empty() && !node->getRefinements().empty())},
     };
 
     if (config.PRINT_JSON_LINE_SEP_BETWEEN_ATTR) {
@@ -76,37 +76,18 @@ void JSONPrinter::add_unvisited(const std::shared_ptr<MCTSNode> &node) {
         return;
 
     for (auto ref: node->getUnvisitedRefinements()) {
-        nodes.push_back(NodeInfo{unvisited, -1, ref, -1, false, true, false, nullptr});
-        edges.push_back({node->getId(), unvisited, 0});
-        --unvisited;
+        auto child = std::make_shared<MCTSNode>(unvisited--, nullptr, ref, -1, refinement_vector{}, refinement_vector{}, node);
+        nodes.push_back(child);
+        edges.push_back({node->getId(), child->getId(), 0});
     }
 
     for (auto ref: node->getUnvisitedExtendRefinements()) {
-        nodes.push_back({unvisited, -1, ref, -1, false, true, false, nullptr});
-        edges.push_back({node->getId(), unvisited, 0});
-        --unvisited;
+        auto child = std::make_shared<MCTSNode>(unvisited--, nullptr, ref, -1, refinement_vector{}, refinement_vector{}, node);
+        nodes.push_back(child);
+        edges.push_back({node->getId(), child->getId(), 0});
     }
 }
 
-
-void JSONPrinter::add_comparison_rollout(const std::shared_ptr<MCTSNode> &node) {
-    if (node->isTerminal()) return;
-
-    edges.push_back({node->getId(), unvisited, 0});
-
-    for (auto it = comparisonResult->beginNonChildRefinements(); it != comparisonResult->end() - 1; ++it) {
-        auto ref = *it;
-        nodes.push_back(NodeInfo{unvisited, -1, ref, comparisonResult->getDFASize(ref), true, false, false, nullptr});
-        edges.push_back({unvisited, unvisited - 1, 1});
-        --unvisited;
-    }
-
-    auto ref = *(comparisonResult->end() - 1);
-    nodes.push_back(NodeInfo{
-        unvisited, comparisonResult->getScore(), ref, comparisonResult->getDFASize(ref), true, false, false, nullptr
-    });
-    --unvisited;
-}
 
 void JSONPrinter::print_info(int depth) {
     std::unordered_map<std::string, std::string> attributeMap = {
@@ -137,7 +118,6 @@ void JSONPrinter::print_info(int depth) {
 
 void JSONPrinter::print(const std::shared_ptr<MCTSNode> &root) {
     std::queue<std::shared_ptr<MCTSNode> > queue;
-    std::shared_ptr<ExpansionRulePolicy> expansionRulePolicy = createExpansionRulePolicy(config.EXPANSION_RULE_POLICY);
 
     for (auto child: root->getChildren()) {
         queue.push(child);
@@ -147,22 +127,8 @@ void JSONPrinter::print(const std::shared_ptr<MCTSNode> &root) {
     while (!queue.empty()) {
         auto expandNode = queue.front();
         queue.pop();
-        NodeInfo info{
-            expandNode->getId(),
-            expandNode->getScore(),
-            expandNode->getRefinement(),
-            expandNode->getDFASize(),
-            comparisonResult->hasRefinement(expandNode),
-            false,
-            expansionRulePolicy->isExpandable(expandNode),
-            expandNode
-        };
-        nodes.push_back(info);
+        nodes.push_back(expandNode);
         add_unvisited(expandNode);
-
-        if (comparisonResult->getLastChildDecision() == expandNode) {
-            add_comparison_rollout(expandNode);
-        }
 
         for (auto child: expandNode->getChildren()) {
             queue.push(child);

@@ -7,7 +7,7 @@
 #include <mcts/propagate/QualityEvaluation.h>
 
 std::unique_ptr<QualityEvaluation> createQualityEvaluation(const std::string_view evaluator) {
-    static const std::unordered_map<std::string, std::function<std::unique_ptr<QualityEvaluation>()>> table = {
+    const std::unordered_map<std::string, std::function<std::unique_ptr<QualityEvaluation>()>> table = {
         {"model-size", [&]() { return std::make_unique<ModelSizeEvaluator>(); }},
     };
     const auto it = table.find(toLower(evaluator));
