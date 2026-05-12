@@ -8,12 +8,10 @@
 #include <refinement.h>
 
 template<typename Comparator>
-concept RefinementComparator = requires (Comparator c, refinement* ref)
+concept RefinementComparator = requires(Comparator c, refinement* ref)
 {
     { c(ref, ref) } -> std::same_as<bool>;
 };
-
-
 
 
 #endif //FLEXFRINGE_REFINEMENTS_HPP

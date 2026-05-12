@@ -13,9 +13,9 @@
 
 struct MCTS {
 private:
-    MCTSConfig config;
-    state_merger *merger;
-    std::shared_ptr<MCTSNode> root;
+    MCTSConfig                       config;
+    state_merger*                    merger;
+    std::shared_ptr<MCTSNode>        root;
     std::shared_ptr<MCTSNodeFactory> nodeFactory;
 
     // Selection Fields
@@ -26,7 +26,7 @@ private:
 
     // Expansion Fields
     std::unique_ptr<ActionSelectionPolicy> expandActionPolicy;
-    std::shared_ptr<ExpansionRulePolicy> expansionRulePolicy;
+    std::shared_ptr<ExpansionRulePolicy>   expansionRulePolicy;
 
     // BackPropagation Fields
     std::shared_ptr<QualityEvaluation> stateEvaluator;
@@ -35,7 +35,7 @@ private:
     std::vector<std::shared_ptr<ConvergencePolicy>> convergencePolicy;
 
 public:
-    explicit MCTS(const MCTSConfig &cfg, state_merger *merger);
+    explicit MCTS(const MCTSConfig& cfg, state_merger* merger);
 
     [[nodiscard]] std::shared_ptr<MCTSNode> getRoot() const {
         return root;
@@ -55,21 +55,21 @@ public:
 
     bool isConverged(const std::shared_ptr<MCTSNode>& expandedNode, const refinement_vector& rolloutLog) const;
 
-    [[nodiscard]]std::shared_ptr<MCTSNode> select() const;
+    [[nodiscard]] std::shared_ptr<MCTSNode> select() const;
 
-    [[nodiscard]]std::shared_ptr<MCTSNode> expand(const std::shared_ptr<MCTSNode> &node) const;
+    [[nodiscard]] std::shared_ptr<MCTSNode> expand(const std::shared_ptr<MCTSNode>& node) const;
 
-    [[nodiscard]]refinement_vector rollout(const std::shared_ptr<MCTSNode> &rolloutNode) const;
+    [[nodiscard]] refinement_vector rollout(const std::shared_ptr<MCTSNode>& rolloutNode) const;
 
-    void backPropagation(const std::shared_ptr<MCTSNode> &rolloutNode, const refinement_vector &log) const;
+    void backPropagation(const std::shared_ptr<MCTSNode>& rolloutNode, const refinement_vector& log) const;
 
-    static void eraseRollout(const refinement_vector &log);
+    static void eraseRollout(const refinement_vector& log);
 
-    [[nodiscard]] refinement_vector finishExpansion(const std::shared_ptr<MCTSNode> &lastChild, refinement_vector &log) const;
+    [[nodiscard]] refinement_vector finishExpansion(const std::shared_ptr<MCTSNode>& lastChild, refinement_vector& log) const;
 
-    [[nodiscard]] refinement_vector expandLog(const std::shared_ptr<MCTSNode> &node, const refinement_vector &expansionLog) const;
+    [[nodiscard]] refinement_vector expandLog(const std::shared_ptr<MCTSNode>& node, const refinement_vector& expansionLog) const;
 
-    [[nodiscard]] refinement_vector undoNode(const std::shared_ptr<MCTSNode> &node, const refinement_vector &expansionLog = {}) const;
+    [[nodiscard]] refinement_vector undoNode(const std::shared_ptr<MCTSNode>& node, const refinement_vector& expansionLog = {}) const;
 };
 
 #endif //FLEXFRINGE_MCTS_HPP

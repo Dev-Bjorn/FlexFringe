@@ -51,14 +51,14 @@ refinement_vector selectNode(const MCTS& mcts) {
 
 refinement_vector getComparisonResult(state_merger* merger, const MCTS& mcts) {
     std::unique_ptr<QualityEvaluation> evaluator = createQualityEvaluation(mcts.getConfig().QUALITY_EVALUATOR_POLICY);
-    const std::unique_ptr<Algorithm> algorithm = createAlgorithm(mcts.getConfig().COMPARISON_ALGORITHM, merger, std::move(evaluator), mcts.getNodeFactory());
+    const std::unique_ptr<Algorithm>   algorithm = createAlgorithm(mcts.getConfig().COMPARISON_ALGORITHM, merger, std::move(evaluator), mcts.getNodeFactory());
     LOG_S(INFO) << "Comparison Algorithm Prepared";
     LOG_S(INFO) << "Starting Comparison Algorithm";
-    return  algorithm->run(mcts.getRoot(), AlgorithmType::comparison);
+    return algorithm->run(mcts.getRoot(), AlgorithmType::comparison);
 }
 
 
-void applyRefinements(state_merger* merger, const refinement_vector &log) {
+void applyRefinements(state_merger* merger, const refinement_vector& log) {
     for (const auto it: log) {
         it->doref(merger);
     }
@@ -68,30 +68,30 @@ void printTree(const MCTS& mcts) {
     std::cout << "Start tree printing to " << OUTPUT_FILE << ".mcts_tree.dot" << std::endl;
 
     std::ofstream output((OUTPUT_FILE + ".mcts_tree.dot").c_str());
-    DotPrinter printer(output, mcts.getConfig());
+    DotPrinter    printer(output, mcts.getConfig());
     printer.print(mcts.getRoot());
     output.close();
 
     std::ofstream outputJson((OUTPUT_FILE + ".mcts_tree.json").c_str());
-    JSONPrinter jsonPrinter(outputJson, mcts.getConfig());
+    JSONPrinter   jsonPrinter(outputJson, mcts.getConfig());
     jsonPrinter.print(mcts.getRoot());
     outputJson.close();
 
     std::cout << "MCTS tree printed to " << OUTPUT_FILE << ".mcts_tree.dot" << std::endl;
 }
 
-void eraseAllRefs(const std::shared_ptr<MCTSNode> &node) {
+void eraseAllRefs(const std::shared_ptr<MCTSNode>& node) {
     std::queue<std::shared_ptr<MCTSNode>> queue;
     queue.push(node);
     while (!queue.empty()) {
         auto n = queue.front();
         queue.pop();
 
-        for (auto refinement : n->getRefinements()) {
+        for (auto refinement: n->getRefinements()) {
             refinement->erase();
         }
 
-        for (auto refinement : n->getExtendRefinements()) {
+        for (auto refinement: n->getExtendRefinements()) {
             refinement->erase();
         }
 
@@ -115,16 +115,16 @@ void runMCTS(std::unordered_map<std::string, std::tuple<state_merger*, evaluatio
     greedyConfig.log();
 
     auto [greedy_state_merger, _] = evals.at(config.COMPARISON_HEURISTIC_NAME);
-    auto [mcts_state_merger, __] = evals.at(config.MCTS_HEURISTIC_NAME);
+    auto [mcts_state_merger, __]  = evals.at(config.MCTS_HEURISTIC_NAME);
 
     LOG_S(INFO) << "MCTS Heuristic: " << mctsConfig.HEURISTIC_NAME;
     LOG_S(INFO) << "Greedy Heuristic: " << greedyConfig.HEURISTIC_NAME;
 
     auto greedy_file = OUTPUT_FILE + ".greedy";
-    auto mcts_file = OUTPUT_FILE + ".mcts";
+    auto mcts_file   = OUTPUT_FILE + ".mcts";
 
     config.EXPANSION_ACTION_SEED = resolveSeed(config.EXPANSION_ACTION_SEED);
-    LOG_S(INFO) << "Expansion seed: " << config.EXPANSION_ACTION_SEED ;
+    LOG_S(INFO) << "Expansion seed: " << config.EXPANSION_ACTION_SEED;
 
     config.ROLLOUT_ACTION_SEED = resolveSeed(config.ROLLOUT_ACTION_SEED);
     LOG_S(INFO) << "Rollout seed: " << config.ROLLOUT_ACTION_SEED;
@@ -138,7 +138,7 @@ void runMCTS(std::unordered_map<std::string, std::tuple<state_merger*, evaluatio
 
     LOG_S(INFO) << "End of Preparation, Starting MCTS run";
 
-    const auto mcts = MCTS(config, mcts_state_merger);
+    const auto mcts        = MCTS(config, mcts_state_merger);
     const auto refinements = selectNode(mcts);
     LOG_S(INFO) << "MCTS Complete, starting comparison algorithm";
     CURRENT_CONFIG = greedyConfig;

@@ -32,7 +32,7 @@ public:
      * @param root The root node of the search tree
      * @return The selected node for expansion
      */
-    virtual std::shared_ptr<MCTSNode> selectNode(state_merger *merger, const std::shared_ptr<MCTSNode> &root) const = 0;
+    virtual std::shared_ptr<MCTSNode> selectNode(state_merger* merger, const std::shared_ptr<MCTSNode>& root) const = 0;
 };
 
 /**
@@ -43,7 +43,7 @@ public:
  * @return The created selection search policy
  */
 std::unique_ptr<SelectionSearchPolicy> createSelectionSearchPolicy(
-    std::string_view policy,
+    std::string_view                     policy,
     std::shared_ptr<NodeSelectionPolicy> selection_policy,
     std::shared_ptr<ExpansionRulePolicy> expansion_rule_policy
 );

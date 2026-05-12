@@ -4,22 +4,22 @@
 
 #include <mcts/AlgorithmTypes.h>
 
-int encodeAlgorithmType(std::unordered_set<AlgorithmType> algorithm) {
+int encodeAlgorithmType(const std::unordered_set<AlgorithmType>& algorithm) {
     int result = 0;
-    for (auto type : algorithm) {
+    for (const auto type: algorithm) {
         result |= (1 << static_cast<int>(type));
     }
     return result;
 }
 
-bool isMCTS(int algorithm) {
-    return algorithm & static_cast<int>(AlgorithmType::mcts);
+bool isMCTS(const int encoding) {
+    return encoding & static_cast<int>(AlgorithmType::mcts);
 }
 
-bool isComparison(int algorithm) {
-    return algorithm & static_cast<int>(AlgorithmType::comparison);
+bool isComparison(const int encoding) {
+    return encoding & static_cast<int>(AlgorithmType::comparison);
 }
 
-bool isFinisher(int algorithm) {
-    return algorithm & static_cast<int>(AlgorithmType::finisher);
+bool isFinisher(const int encoding) {
+    return encoding & static_cast<int>(AlgorithmType::finisher);
 }

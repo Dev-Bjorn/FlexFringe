@@ -11,13 +11,13 @@
 #include <mcts/selection/node/NodeSelection.h>
 
 
-MCTS::MCTS(const MCTSConfig &cfg, state_merger *merger) : config(cfg), merger(merger) {
+MCTS::MCTS(const MCTSConfig& cfg, state_merger* merger) : config(cfg), merger(merger) {
     rolloutActionSelector = createActionPolicy(cfg.ROLLOUT_ACTION_POLICY, cfg);
-    expandActionPolicy = createActionPolicy(cfg.EXPANSION_ACTION_POLICY, cfg);
+    expandActionPolicy    = createActionPolicy(cfg.EXPANSION_ACTION_POLICY, cfg);
 
     auto nodeSelectionPolicy = createNodeSelectionPolicy(cfg.NODE_SELECTION_POLICY, cfg);
-    expansionRulePolicy = createExpansionRulePolicy(cfg.EXPANSION_RULE_POLICY);
-    selectionPolicy = createSelectionSearchPolicy(
+    expansionRulePolicy      = createExpansionRulePolicy(cfg.EXPANSION_RULE_POLICY);
+    selectionPolicy          = createSelectionSearchPolicy(
         cfg.SELECTION_SEARCH_METHOD,
         nodeSelectionPolicy,
         expansionRulePolicy
@@ -29,7 +29,7 @@ MCTS::MCTS(const MCTSConfig &cfg, state_merger *merger) : config(cfg), merger(me
     }
 
     auto nodeDataFactory = std::make_unique<NodeDataFactory>(nodeSelectionPolicy);
-    nodeFactory = std::make_shared<MCTSNodeFactory>(std::move(nodeDataFactory));
+    nodeFactory          = std::make_shared<MCTSNodeFactory>(std::move(nodeDataFactory));
 
     auto [refs, extendsRefs] = merger->get_refinements();
 
@@ -40,7 +40,7 @@ std::shared_ptr<MCTSNode> MCTS::select() const {
     return selectionPolicy->selectNode(merger, root);
 }
 
-bool MCTS::isConverged(const std::shared_ptr<MCTSNode> &expandedNode, const refinement_vector &rolloutLog) const {
+bool MCTS::isConverged(const std::shared_ptr<MCTSNode>& expandedNode, const refinement_vector& rolloutLog) const {
     for (const auto& policy: convergencePolicy) {
         if (policy->isConverged(merger, expandedNode, rolloutLog)) {
             return true;
@@ -49,7 +49,7 @@ bool MCTS::isConverged(const std::shared_ptr<MCTSNode> &expandedNode, const refi
     return false;
 }
 
-std::shared_ptr<MCTSNode> MCTS::expand(const std::shared_ptr<MCTSNode> &node) const {
+std::shared_ptr<MCTSNode> MCTS::expand(const std::shared_ptr<MCTSNode>& node) const {
     // Meaning the node cannot be expanded
     if (!expansionRulePolicy->isExpandable(node)) return nullptr;
 
@@ -66,14 +66,14 @@ std::shared_ptr<MCTSNode> MCTS::expand(const std::shared_ptr<MCTSNode> &node) co
     ref->doref(merger);
 
     auto [newRefs, newExtendRefs] = merger->get_refinements();
-    auto childNode = nodeFactory->createMCTSNode(ref, merger->get_final_apta_size(), newRefs, newExtendRefs, node);
+    auto childNode                = nodeFactory->createMCTSNode(ref, merger->get_final_apta_size(), newRefs, newExtendRefs, node);
 
     node->expand(childNode, index);
 
     return childNode;
 }
 
-refinement_vector MCTS::rollout(const std::shared_ptr<MCTSNode> &rolloutNode) const {
+refinement_vector MCTS::rollout(const std::shared_ptr<MCTSNode>& rolloutNode) const {
     if (rolloutNode->isTerminal()) return {};
 
     refinement_vector log{};
@@ -109,15 +109,14 @@ refinement_vector MCTS::rollout(const std::shared_ptr<MCTSNode> &rolloutNode) co
             }
         }
         auto [newRefs, newExtendRefs] = merger->get_refinements();
-        refs = std::move(newRefs);
-        extendRefs = std::move(newExtendRefs);
+        refs                          = std::move(newRefs);
+        extendRefs                    = std::move(newExtendRefs);
     }
 
     return log;
 }
 
-void MCTS::backPropagation(const std::shared_ptr<MCTSNode> &rolloutNode, const refinement_vector &log) const {
-
+void MCTS::backPropagation(const std::shared_ptr<MCTSNode>& rolloutNode, const refinement_vector& log) const {
     const double score = stateEvaluator->evaluate(merger);
     rolloutNode->setScore(score);
 
@@ -141,7 +140,7 @@ void MCTS::eraseRollout(const refinement_vector& log) {
     }
 }
 
-refinement_vector MCTS::finishExpansion(const std::shared_ptr<MCTSNode> &lastChild, refinement_vector& log) const {
+refinement_vector MCTS::finishExpansion(const std::shared_ptr<MCTSNode>& lastChild, refinement_vector& log) const {
     if (!config.USE_FINISHER) return log;
     LOG_S(INFO) << "Preparing finisher algorithm";
     auto comparison_algorithm = createAlgorithm(config.FINISH_ALGORITHM, merger, stateEvaluator, this->nodeFactory);
@@ -153,7 +152,7 @@ refinement_vector MCTS::finishExpansion(const std::shared_ptr<MCTSNode> &lastChi
     return combined;
 }
 
-refinement_vector MCTS::expandLog(const std::shared_ptr<MCTSNode> &node, const refinement_vector &expansionLog) const {
+refinement_vector MCTS::expandLog(const std::shared_ptr<MCTSNode>& node, const refinement_vector& expansionLog) const {
     refinement_vector log{};
 
     // Get the ascendant log
@@ -169,12 +168,12 @@ refinement_vector MCTS::expandLog(const std::shared_ptr<MCTSNode> &node, const r
         (*it)->doref(merger);
     }
 
-    n = node;
+    n       = node;
     auto it = expansionLog.begin();
 
     // Find last overlapping child with the log.
     while (true) {
-        const auto current = *it;
+        const auto                current  = *it;
         std::shared_ptr<MCTSNode> selected = nullptr;
         for (const auto& ref: n->getChildren()) {
             if (ref->getRefinement() == current) {
@@ -195,8 +194,8 @@ refinement_vector MCTS::expandLog(const std::shared_ptr<MCTSNode> &node, const r
     for (; it != expansionLog.end(); ++it) {
         log.push_back(*it);
         (*it)->doref(merger);
-        auto [newRefs, newExtendRefs] = merger->get_refinements();
-        const auto childNode = nodeFactory->createMCTSNode(*it, merger->get_final_apta_size(), newRefs, newExtendRefs, n);
+        auto       [newRefs, newExtendRefs] = merger->get_refinements();
+        const auto childNode                = nodeFactory->createMCTSNode(*it, merger->get_final_apta_size(), newRefs, newExtendRefs, n);
         n->expand(childNode, -1);
         n = childNode;
     }
@@ -211,7 +210,7 @@ refinement_vector MCTS::expandLog(const std::shared_ptr<MCTSNode> &node, const r
     return finishedLog;
 }
 
-refinement_vector MCTS::undoNode(const std::shared_ptr<MCTSNode> &node, const refinement_vector &expansionLog) const {
+refinement_vector MCTS::undoNode(const std::shared_ptr<MCTSNode>& node, const refinement_vector& expansionLog) const {
     refinement_vector log{};
     // Undo is the reverse operation of applying, so start at the end of the log and work towards the root.
     for (auto it = expansionLog.rbegin(); it != expansionLog.rend(); ++it) {
