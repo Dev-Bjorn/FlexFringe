@@ -9,4 +9,3 @@ void LUCB1NodeData::update(const double value) {
     visits++;
     Q += value;
 }
-

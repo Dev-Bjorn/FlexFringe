@@ -14,7 +14,6 @@ struct LUCB1NodeData : NodeData {
     double Q = 0.0;
 
     void update(double value) override;
-
 };
 
 #endif //FLEXFRINGE_LUCB1_CONTEXT_H

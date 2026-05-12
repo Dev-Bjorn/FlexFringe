@@ -11,7 +11,6 @@
  * @brief Checks whether a node is expandable.
  */
 struct ExpansionRulePolicy {
-
     virtual ~ExpansionRulePolicy() = default;
 
     /**
@@ -19,8 +18,7 @@ struct ExpansionRulePolicy {
      * @param node The node to check for expandability.
      * @return True if the node is expandable, false otherwise.
      */
-    virtual bool isExpandable(const std::shared_ptr<MCTSNode> &node) = 0;
-
+    virtual bool isExpandable(const std::shared_ptr<MCTSNode>& node) = 0;
 };
 
 /**

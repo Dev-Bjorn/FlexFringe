@@ -12,7 +12,7 @@ std::string JSONPrinter::ind(const int depth) {
 
 void JSONPrinter::print_attributes(std::unordered_map<std::string, std::string> attributeMap, const int depth) {
     auto sep = "";
-    for (const auto &[key, value]: attributeMap) {
+    for (const auto& [key, value]: attributeMap) {
         if (config.PRINT_JSON_LINE_SEP_BETWEEN_ATTR) {
             output << sep << ind(depth) << "\"" << key << "\": " << value;
             sep = ",\n";
@@ -23,7 +23,7 @@ void JSONPrinter::print_attributes(std::unordered_map<std::string, std::string> 
     }
 }
 
-void JSONPrinter::print_node(const std::shared_ptr<MCTSNode> &node, const int depth) {
+void JSONPrinter::print_node(const std::shared_ptr<MCTSNode>& node, const int depth) {
     std::unordered_map<std::string, std::string> attributeMap = {
         {"id", std::to_string(node->getId())},
         {"score", std::to_string(node->getScore())},
@@ -50,7 +50,7 @@ void JSONPrinter::print_node(const std::shared_ptr<MCTSNode> &node, const int de
     }
 }
 
-void JSONPrinter::print_edge(const std::tuple<int, int, int> &t, const int depth) {
+void JSONPrinter::print_edge(const std::tuple<int, int, int>& t, const int depth) {
     std::unordered_map<std::string, std::string> attributeMap = {
         {"from", std::to_string(std::get<0>(t))},
         {"to", std::to_string(std::get<1>(t))},
@@ -68,7 +68,7 @@ void JSONPrinter::print_edge(const std::tuple<int, int, int> &t, const int depth
     }
 }
 
-void JSONPrinter::add_unvisited(const std::shared_ptr<MCTSNode> &node) {
+void JSONPrinter::add_unvisited(const std::shared_ptr<MCTSNode>& node) {
     if (!config.PRINT_UNVISITED) return;
 
     if (node->getRefinements().size() + node->getExtendRefinements().size() - node->getUnvisitedExtendRefinements().
@@ -116,8 +116,8 @@ void JSONPrinter::print_info(int depth) {
     }
 }
 
-void JSONPrinter::print(const std::shared_ptr<MCTSNode> &root) {
-    std::queue<std::shared_ptr<MCTSNode> > queue;
+void JSONPrinter::print(const std::shared_ptr<MCTSNode>& root) {
+    std::queue<std::shared_ptr<MCTSNode>> queue;
 
     for (auto child: root->getChildren()) {
         queue.push(child);
@@ -141,7 +141,7 @@ void JSONPrinter::print(const std::shared_ptr<MCTSNode> &root) {
     output << ind(1) << "\"nodes\":[\n";
     output << ind(2) << "{\"id\": 0}";
 
-    for (auto &node: nodes) {
+    for (auto& node: nodes) {
         output << ",\n";
         print_node(node, 2);
     }
@@ -149,7 +149,7 @@ void JSONPrinter::print(const std::shared_ptr<MCTSNode> &root) {
     output << ind(1) << "],\n";
     output << ind(1) << "\"edges\":[\n";
     auto sep = "";
-    for (auto &edge: edges) {
+    for (auto& edge: edges) {
         output << sep;
         print_edge(edge, 2);
         sep = ",\n";

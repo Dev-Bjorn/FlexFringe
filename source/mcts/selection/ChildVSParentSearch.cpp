@@ -4,7 +4,7 @@
 
 #include <mcts/selection/ChildVSParentSearch.h>
 
-std::shared_ptr<MCTSNode> ChildVSParentSearch::selectNode(state_merger *merger, const std::shared_ptr<MCTSNode> &root) const {
+std::shared_ptr<MCTSNode> ChildVSParentSearch::selectNode(state_merger* merger, const std::shared_ptr<MCTSNode>& root) const {
     std::shared_ptr<MCTSNode> node = root;
 
     while (!node->isTerminal()) {
@@ -18,9 +18,8 @@ std::shared_ptr<MCTSNode> ChildVSParentSearch::selectNode(state_merger *merger, 
 
         if (expansionRulePolicy->isExpandable(node)) {
             std::vector nodes = {node, childNode};
-            auto selected = selectionPolicy->select(nodes);
 
-            if (selected == node) break;
+            if (auto selected = selectionPolicy->select(nodes); selected == node) break;
         }
         childNode->doRef(merger);
         node = childNode;
@@ -28,4 +27,3 @@ std::shared_ptr<MCTSNode> ChildVSParentSearch::selectNode(state_merger *merger, 
 
     return node;
 }
-

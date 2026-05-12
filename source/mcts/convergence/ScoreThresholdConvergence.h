@@ -17,7 +17,7 @@ public:
     explicit ScoreThresholdConvergence(std::shared_ptr<QualityEvaluation> evaluator, const double threshold) : ConvergencePolicy(std::move(evaluator)), threshold(threshold) {
     }
 
-    bool isConverged(const state_merger *merger, const std::shared_ptr<MCTSNode> &expansion, const refinement_vector &refinements) override;
+    bool isConverged(const state_merger* merger, const std::shared_ptr<MCTSNode>& expansion, const refinement_vector& refinements) override;
 };
 
 #endif //FLEXFRINGE_SCORE_THRESHOLD_CONVERGENCE_H

@@ -11,25 +11,25 @@
 
 struct MCTSPrinter {
 protected:
-    int unvisited = -1;
-    const MCTSConfig config;
-    std::ofstream &output;
+    int                                  unvisited = -1;
+    const MCTSConfig                     config;
+    std::ofstream&                       output;
     std::shared_ptr<ExpansionRulePolicy> expansionRulePolicy;
 
-    static std::string getRefinementName(refinement *ref);
+    static std::string getRefinementName(refinement* ref);
 
-    static std::string involvedRefinementNodes(refinement *refinement);
+    static std::string involvedRefinementNodes(refinement* refinement);
 
-    static int visits(refinement *ref);
+    static int visits(refinement* ref);
 
 public:
     virtual ~MCTSPrinter() = default;
 
-    virtual void print(const std::shared_ptr<MCTSNode> &node) = 0;
+    virtual void print(const std::shared_ptr<MCTSNode>& node) = 0;
 
     explicit MCTSPrinter(
-        std::ofstream &output,
-        const MCTSConfig &config
+        std::ofstream&    output,
+        const MCTSConfig& config
     ) : config(config), output(output) {
         expansionRulePolicy = createExpansionRulePolicy(config.EXPANSION_RULE_POLICY);
     }

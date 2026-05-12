@@ -16,7 +16,7 @@ struct ChildVSParentSearch : SelectionSearchPolicy {
     ) : SelectionSearchPolicy(std::move(selectionPolicy), std::move(expansionRulePolicy)) {
     };
 
-    std::shared_ptr<MCTSNode> selectNode(state_merger *merger, const std::shared_ptr<MCTSNode>& root) const override;
+    std::shared_ptr<MCTSNode> selectNode(state_merger* merger, const std::shared_ptr<MCTSNode>& root) const override;
 };
 
 #endif //FLEXFRINGE_CHILD_VS_PARENT_SEARCH_SELECTION_POLICY_HPP

@@ -11,10 +11,10 @@
 struct ConvergencePolicy {
 protected:
     std::shared_ptr<QualityEvaluation> evaluator;
-    size_t iteration = 0;
-    int bestScore = std::numeric_limits<int>::max();
-    std::shared_ptr<MCTSNode> bestNode;
-    refinement_vector bestRefinements;
+    size_t                             iteration = 0;
+    int                                bestScore = std::numeric_limits<int>::max();
+    std::shared_ptr<MCTSNode>          bestNode;
+    refinement_vector                  bestRefinements;
 
 public:
     /**
@@ -33,7 +33,7 @@ public:
      * @param refinements The vector of refinements applied during the rollout MCTS process.
      * @return True if convergence is detected, false otherwise.
      */
-    virtual bool isConverged(const state_merger *merger, const std::shared_ptr<MCTSNode> &expansion, const refinement_vector &refinements) = 0;
+    virtual bool isConverged(const state_merger* merger, const std::shared_ptr<MCTSNode>& expansion, const refinement_vector& refinements) = 0;
 
     /**
      * The best expansion node.
@@ -53,6 +53,6 @@ public:
  * @param config The configuration parameters for the convergence policy.
  * @return A unique pointer to the created convergence policy.
  */
-std::unique_ptr<ConvergencePolicy> createConvergencePolicy(const std::string_view policy, std::shared_ptr<QualityEvaluation> qualityEvaluation, const MCTSConfig &config);
+std::unique_ptr<ConvergencePolicy> createConvergencePolicy(const std::string_view policy, std::shared_ptr<QualityEvaluation> qualityEvaluation, const MCTSConfig& config);
 
 #endif //FLEXFRINGE_CONVERGENCE_POLICY_H

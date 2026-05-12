@@ -14,7 +14,7 @@ typedef std::function<std::unique_ptr<SelectionSearchPolicy>(
 )> SelectionPolicyFactory;
 
 std::unique_ptr<SelectionSearchPolicy> createSelectionSearchPolicy(
-    const std::string_view policy,
+    const std::string_view               policy,
     std::shared_ptr<NodeSelectionPolicy> selection_policy,
     std::shared_ptr<ExpansionRulePolicy> expansion_rule_policy
 ) {

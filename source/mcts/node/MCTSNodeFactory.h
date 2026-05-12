@@ -14,7 +14,7 @@
 struct MCTSNodeFactory {
 private:
     std::unique_ptr<NodeDataFactory> contextFactory;
-    int currentId = 1;
+    int                              currentId = 1;
 
 public:
     explicit MCTSNodeFactory(std::unique_ptr<NodeDataFactory> factory) : contextFactory(std::move(factory)) {
@@ -28,9 +28,9 @@ public:
      * @return A shared pointer to the created root node.
      */
     std::shared_ptr<MCTSNode> createRoot(
-        int dfaSize,
-        const refinement_vector &possibleRefs,
-        const refinement_vector &extendRefs
+        int                      dfaSize,
+        const refinement_vector& possibleRefs,
+        const refinement_vector& extendRefs
     ) const;
 
     /**
@@ -43,14 +43,14 @@ public:
      * @return A shared pointer to the created child node.
      */
     std::shared_ptr<MCTSNode> create(
-        refinement *ref,
-        int dfaSize,
-        const refinement_vector &possibleRefs,
-        const refinement_vector &extendRefs,
+        refinement*               ref,
+        int                       dfaSize,
+        const refinement_vector&  possibleRefs,
+        const refinement_vector&  extendRefs,
         std::shared_ptr<MCTSNode> parent
     );
 
-    std::shared_ptr<MCTSNode> createMCTSNode(refinement *ref, int dfaSize, const refinement_vector &possibleRefs, const refinement_vector &extendRefs, std::shared_ptr<MCTSNode> parent);
+    std::shared_ptr<MCTSNode> createMCTSNode(refinement* ref, int dfaSize, const refinement_vector& possibleRefs, const refinement_vector& extendRefs, std::shared_ptr<MCTSNode> parent);
 };
 
 #endif //FLEXFRINGE_MCTS_NODE_FACTORY_H

@@ -13,7 +13,7 @@
 struct NodeSelectionPolicy {
     virtual ~NodeSelectionPolicy() = default;
 
-    [[nodiscard]] virtual std::shared_ptr<MCTSNode> select(const std::vector<std::shared_ptr<MCTSNode> > &nodes) const = 0;
+    [[nodiscard]] virtual std::shared_ptr<MCTSNode> select(const std::vector<std::shared_ptr<MCTSNode>>& nodes) const = 0;
 
     /**
      * Construct the node data required for the selection policy.
@@ -28,6 +28,6 @@ struct NodeSelectionPolicy {
  * @param config The configuration.
  * @return The created node selection policy.
  */
-std::shared_ptr<NodeSelectionPolicy> createNodeSelectionPolicy(std::string_view policy, const MCTSConfig &config);
+std::shared_ptr<NodeSelectionPolicy> createNodeSelectionPolicy(std::string_view policy, const MCTSConfig& config);
 
 #endif //FLEXFRINGE_NODE_SELECTION_POLICY_H

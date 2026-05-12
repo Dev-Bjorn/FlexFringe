@@ -4,7 +4,7 @@
 
 #include <mcts/selection/BFSSearch.h>
 
-std::shared_ptr<MCTSNode> BFSSearch::selectNode(state_merger* merger, const std::shared_ptr<MCTSNode> &root) const {
+std::shared_ptr<MCTSNode> BFSSearch::selectNode(state_merger* merger, const std::shared_ptr<MCTSNode>& root) const {
     std::shared_ptr<MCTSNode> node = root;
 
     while (!expansionRulePolicy->isExpandable(node) && !node->isTerminal()) {
@@ -22,5 +22,3 @@ std::shared_ptr<MCTSNode> BFSSearch::selectNode(state_merger* merger, const std:
 
     return node;
 }
-
-

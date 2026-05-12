@@ -10,19 +10,19 @@
 
 struct GreedyAlgorithm : Algorithm {
 private:
-    const std::function<bool(refinement *, refinement *)> comparator;
+    const std::function<bool(refinement*, refinement*)> comparator;
 
-    refinement *getRefinement(const std::shared_ptr<MCTSNode> &node) const;
+    refinement* getRefinement(const std::shared_ptr<MCTSNode>& node) const;
 
 protected:
-    refinement_vector updateRefinements(const std::shared_ptr<MCTSNode> &root) const override;
+    refinement_vector updateRefinements(const std::shared_ptr<MCTSNode>& root) const override;
 
 public:
     template<RefinementComparator Comparator>
-    explicit GreedyAlgorithm(Comparator comparator, state_merger *merger, std::shared_ptr<QualityEvaluation> evaluator, std::shared_ptr<MCTSNodeFactory> factory) : Algorithm(merger, std::move(evaluator), std::move(factory)), comparator(comparator) {
+    explicit GreedyAlgorithm(Comparator comparator, state_merger* merger, std::shared_ptr<QualityEvaluation> evaluator, std::shared_ptr<MCTSNodeFactory> factory) : Algorithm(merger, std::move(evaluator), std::move(factory)), comparator(comparator) {
     }
 
-    explicit GreedyAlgorithm(state_merger *merger, std::shared_ptr<QualityEvaluation> evaluator, std::shared_ptr<MCTSNodeFactory> factory) : GreedyAlgorithm(score_compare{}, merger, std::move(evaluator), std::move(factory)) {
+    explicit GreedyAlgorithm(state_merger* merger, std::shared_ptr<QualityEvaluation> evaluator, std::shared_ptr<MCTSNodeFactory> factory) : GreedyAlgorithm(score_compare{}, merger, std::move(evaluator), std::move(factory)) {
     }
 };
 #endif //FLEXFRINGE_GREEDY_H

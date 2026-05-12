@@ -25,7 +25,7 @@ public:
     explicit WeightedMergeSplitFirst(const uint32_t seed) : rng(seed) {
     }
 
-    std::tuple<refinement_vector, int> action(const refinement_vector &refinements, const refinement_vector &extendRefs) override;
+    std::tuple<refinement_vector, int> action(const refinement_vector& refinements, const refinement_vector& extendRefs) override;
 };
 
 

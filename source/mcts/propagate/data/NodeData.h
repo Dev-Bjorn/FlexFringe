@@ -11,6 +11,7 @@
 struct NodeData {
 protected:
     int visits = 0;
+
 public:
     virtual ~NodeData() = default;
 

@@ -14,10 +14,15 @@
 struct LCB1SelectionPolicy : NodeSelectionPolicy {
 private:
     double C;
+
 public:
-    explicit LCB1SelectionPolicy(const double LCB_constant) : C(LCB_constant) {};
-    [[nodiscard]] double score(const std::shared_ptr<MCTSNode> &node) const;
+    explicit LCB1SelectionPolicy(const double LCB_constant) : C(LCB_constant) {
+    };
+
+    [[nodiscard]] double score(const std::shared_ptr<MCTSNode>& node) const;
+
     [[nodiscard]] std::shared_ptr<MCTSNode> select(const std::vector<std::shared_ptr<MCTSNode>>& nodes) const override;
+
     [[nodiscard]] std::shared_ptr<NodeData> createNodeData() const override;
 };
 

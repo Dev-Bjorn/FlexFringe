@@ -17,7 +17,7 @@ public:
     explicit IterationConvergence(std::shared_ptr<QualityEvaluation> qualityEvaluation, const unsigned int maxIteration) : ConvergencePolicy(std::move(qualityEvaluation)), maxIteration(maxIteration) {
     };
 
-    bool isConverged(const state_merger *merger, const std::shared_ptr<MCTSNode> &expansion, const refinement_vector &refinements) override;
+    bool isConverged(const state_merger* merger, const std::shared_ptr<MCTSNode>& expansion, const refinement_vector& refinements) override;
 };
 
 #endif //FLEXFRINGE_ITERATION_CONVERGENCE_POLICY_H

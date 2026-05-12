@@ -7,10 +7,10 @@
 #include <refinement.h>
 #include <mcts/action/UniformAction.h>
 
-std::tuple<refinement_vector, int> UniformAction::action(const refinement_vector &refinements, const refinement_vector &extendRefs) {
+std::tuple<refinement_vector, int> UniformAction::action(const refinement_vector& refinements, const refinement_vector& extendRefs) {
     if (refinements.empty() && extendRefs.empty()) return std::make_tuple(refinement_vector{}, -1);
     std::uniform_int_distribution<int> dist(0, refinements.size() + extendRefs.size() - 1);
-    size_t index = dist(rng);
+    size_t                             index = dist(rng);
     if (index >= refinements.size()) {
         return {extendRefs, index - refinements.size()};
     }

@@ -5,7 +5,7 @@
 
 #include <mcts/node/printer/DotPrinter.h>
 
-std::string DotPrinter::getNodeColor(const std::shared_ptr<MCTSNode> &node) const {
+std::string DotPrinter::getNodeColor(const std::shared_ptr<MCTSNode>& node) const {
     if (node->getId() < 0) return "violet";
     if (node->isInAlgorithm(AlgorithmType::comparison)) return "lightcoral";
     if (node->isTerminal()) return "tomato";
@@ -14,7 +14,7 @@ std::string DotPrinter::getNodeColor(const std::shared_ptr<MCTSNode> &node) cons
     return "ghostwhite";
 }
 
-void DotPrinter::print_label(const std::shared_ptr<MCTSNode> &info) const {
+void DotPrinter::print_label(const std::shared_ptr<MCTSNode>& info) const {
     if (info->getId() >= 0) output << "ID: " << info->getId() << "\\n";
     output << "Refinement: " << getRefinementName(info->getRefinement());
     output << "\\nRef-Score: " << info->getRefinement()->score;
@@ -24,7 +24,7 @@ void DotPrinter::print_label(const std::shared_ptr<MCTSNode> &info) const {
     }
 }
 
-void DotPrinter::print_attributes(const std::shared_ptr<MCTSNode> &info) {
+void DotPrinter::print_attributes(const std::shared_ptr<MCTSNode>& info) {
     output << "label=\"";
     print_label(info);
     output << "\"";
@@ -61,18 +61,19 @@ void DotPrinter::print_edge(const int from, const int to, const int visits) cons
     output << "];\n";
 }
 
-void DotPrinter::print_edges(const std::shared_ptr<MCTSNode> &node) {
-    for (auto &child: node->getChildren()) {
+void DotPrinter::print_edges(const std::shared_ptr<MCTSNode>& node) {
+    for (auto& child: node->getChildren()) {
         print_edge(node->getId(), child->getId(), child->getContext()->getVisits());
         queue.push(child);
     }
 }
 
-void DotPrinter::print_unvisited(const std::shared_ptr<MCTSNode> &node) {
+void DotPrinter::print_unvisited(const std::shared_ptr<MCTSNode>& node) {
     if (!config.PRINT_UNVISITED) return;
 
     if (node->getRefinements().size() + node->getExtendRefinements().size() - node->getUnvisitedExtendRefinements().
-    size() - node->getUnvisitedRefinements().size() == 0) return;
+        size() - node->getUnvisitedRefinements().size() == 0)
+        return;
 
     for (auto ref: node->getUnvisitedRefinements()) {
         auto child = std::make_shared<MCTSNode>(unvisited--, nullptr, ref, -1, refinement_vector{}, refinement_vector{}, node);
@@ -87,7 +88,7 @@ void DotPrinter::print_unvisited(const std::shared_ptr<MCTSNode> &node) {
     }
 }
 
-void DotPrinter::print(const std::shared_ptr<MCTSNode> &node) {
+void DotPrinter::print(const std::shared_ptr<MCTSNode>& node) {
     output << "digraph DFA {\n";
     output << "\t" << node->getId() << " [label=\"root\" shape=box];\n";
     print_edges(node);

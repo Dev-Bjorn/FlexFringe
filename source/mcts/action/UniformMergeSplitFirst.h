@@ -17,6 +17,7 @@
 struct UniformMergeSplitFirst : ActionSelectionPolicy {
 private:
     std::mt19937 rng;
+
 public:
     /**
      * Constructs the policy with a fixed seed.

@@ -4,14 +4,14 @@
 
 #include "Greedy.h"
 
-refinement *GreedyAlgorithm::getRefinement(const std::shared_ptr<MCTSNode>& node) const {
+refinement* GreedyAlgorithm::getRefinement(const std::shared_ptr<MCTSNode>& node) const {
     // Base Case
     if (node->isTerminal()) return nullptr;
     if (node->getRefinements().empty()) {
         return node->getExtendRefinements()[0];
     }
 
-    refinement *bestRef = nullptr;
+    refinement* bestRef = nullptr;
 
     for (const auto ref: node->getRefinements()) {
         if (bestRef == nullptr || comparator(ref, bestRef)) {
@@ -22,8 +22,8 @@ refinement *GreedyAlgorithm::getRefinement(const std::shared_ptr<MCTSNode>& node
     return bestRef;
 }
 
-refinement_vector GreedyAlgorithm::updateRefinements(const std::shared_ptr<MCTSNode> &root) const {
-    auto refs = root->getRefinements();
+refinement_vector GreedyAlgorithm::updateRefinements(const std::shared_ptr<MCTSNode>& root) const {
+    auto refs       = root->getRefinements();
     auto extendRefs = root->getExtendRefinements();
 
     refinement_vector greedyPicks{};
@@ -45,8 +45,8 @@ refinement_vector GreedyAlgorithm::updateRefinements(const std::shared_ptr<MCTSN
         if (auto child = getChild(node, ref); node != nullptr && child != nullptr) {
             node = child;
         } else {
-            auto [newRefs, newExtendRefs] = merger->get_refinements();
-            const auto newChild = factory->create(ref, merger->get_final_apta_size(), newRefs, newExtendRefs, node);
+            auto       [newRefs, newExtendRefs] = merger->get_refinements();
+            const auto newChild                 = factory->create(ref, merger->get_final_apta_size(), newRefs, newExtendRefs, node);
             node->expand(newChild, -1);
             node = newChild;
         }

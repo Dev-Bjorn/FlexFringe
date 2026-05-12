@@ -10,8 +10,6 @@
  * @brief Full expansion rule returns true, when a merge, split, or extend refinement is not visited.
  */
 struct FullRule : ExpansionRulePolicy {
-
-    bool isExpandable(const std::shared_ptr<MCTSNode> &node) override;
-
+    bool isExpandable(const std::shared_ptr<MCTSNode>& node) override;
 };
 #endif //FLEXFRINGE_FULL_EXPANSION_RULE_H

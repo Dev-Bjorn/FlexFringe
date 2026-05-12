@@ -16,7 +16,6 @@ std::shared_ptr<NodeSelectionPolicy> createNodeSelectionPolicy(const std::string
         {"ucb1", [&]() { return std::make_unique<UCB1SelectionPolicy>(config.UCB1_CONSTANT); }},
     };
     const auto it = table.find(toLower(policy));
-    if (it == table.end())
-        throw std::invalid_argument("Unknown State Evaluator: " + std::string(policy));
+    if (it == table.end()) throw std::invalid_argument("Unknown State Evaluator: " + std::string(policy));
     return it->second();
 }

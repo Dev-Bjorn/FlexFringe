@@ -22,11 +22,12 @@ public:
      * @param comparator A comparator function to which returns true when the first refinement parameter is better than
      * the second refinement parameter.
      */
-    template <RefinementComparator Comparator>
+    template<RefinementComparator Comparator>
     explicit GreedyAction(Comparator comparator) : comparator(comparator) {
     }
 
-    explicit GreedyAction() : GreedyAction(score_compare{}) {}
+    explicit GreedyAction() : GreedyAction(score_compare{}) {
+    }
 
     std::tuple<refinement_vector, int> action(const refinement_vector& refinements, const refinement_vector& extendRefs) override;
 };

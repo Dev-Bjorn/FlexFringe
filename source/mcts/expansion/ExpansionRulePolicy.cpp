@@ -15,7 +15,6 @@ std::shared_ptr<ExpansionRulePolicy> createExpansionRulePolicy(const std::string
         {"single_extend", [&]() { return std::make_unique<SingleExtendRule>(); }}
     };
     const auto it = table.find(toLower(policy));
-    if (it == table.end())
-        throw std::invalid_argument("Unknown ActionPolicy: " + std::string(policy));
+    if (it == table.end()) throw std::invalid_argument("Unknown ActionPolicy: " + std::string(policy));
     return it->second();
 }

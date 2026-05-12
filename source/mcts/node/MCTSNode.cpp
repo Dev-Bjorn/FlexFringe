@@ -6,13 +6,13 @@
 #include <mcts/node/MCTSNode.h>
 
 MCTSNode::MCTSNode(
-    const int id,
-    const std::shared_ptr<NodeData> &context,
-    refinement *ref,
-    const int dfaSize,
-    refinement_vector possibleRefs,
-    refinement_vector extendRefs,
-    std::shared_ptr<MCTSNode> parent
+    const int                        id,
+    const std::shared_ptr<NodeData>& context,
+    refinement*                      ref,
+    const int                        dfaSize,
+    refinement_vector                possibleRefs,
+    refinement_vector                extendRefs,
+    std::shared_ptr<MCTSNode>        parent
 ) : id(id),
     context(context),
     currentRef(ref),
@@ -26,7 +26,7 @@ MCTSNode::MCTSNode(
     children.reserve(possibleRefs.size() + extendRefs.size());
 }
 
-bool MCTSNode::isTerminal(const refinement_vector &refs, const refinement_vector &extendRefs) {
+bool MCTSNode::isTerminal(const refinement_vector& refs, const refinement_vector& extendRefs) {
     return refs.empty() && extendRefs.empty();
 }
 
@@ -34,7 +34,7 @@ bool MCTSNode::isTerminal() const {
     return isTerminal(refs, extendRefs);
 }
 
-bool MCTSNode::isVisited(refinement *refinement) const {
+bool MCTSNode::isVisited(refinement* refinement) const {
     if (refinement->type() == 3) {
         return std::ranges::find(unvisitedExtendRefs, refinement) != unvisitedExtendRefs.end();
     } else {
@@ -52,13 +52,12 @@ bool equal(refinement* ref1, refinement* ref2) {
         auto mr2 = dynamic_cast<const merge_refinement*>(ref2);
         return mr1->blue->get_number() == mr2->blue->get_number();
     }
-
 }
 
-size_t findIndex(const refinement_vector &refs, const int index, refinement *refinement) {
+size_t findIndex(const refinement_vector& refs, const int index, refinement* refinement) {
     if (index < 0 || static_cast<std::size_t>(index) >= refs.size()) {
         for (size_t i = 0; i < refs.size(); ++i) {
-            const auto &ref = refs.at(i);
+            const auto& ref = refs.at(i);
             if (equal(ref, refinement)) {
                 return i;
             }
@@ -69,8 +68,8 @@ size_t findIndex(const refinement_vector &refs, const int index, refinement *ref
 }
 
 void MCTSNode::expand(std::shared_ptr<MCTSNode> child, const int index) {
-    auto &mutRef = child->currentRef->type() == 3 ? unvisitedExtendRefs : unvisitedRefs;
-    const size_t idx = findIndex(mutRef, index, child->currentRef);
+    auto&        mutRef = child->currentRef->type() == 3 ? unvisitedExtendRefs : unvisitedRefs;
+    const size_t idx    = findIndex(mutRef, index, child->currentRef);
     if (idx >= mutRef.size()) {
         throw std::out_of_range("non-existing refinement index");
     }
@@ -82,12 +81,12 @@ void MCTSNode::expand(std::shared_ptr<MCTSNode> child, const int index) {
 }
 
 
-void MCTSNode::undo(state_merger *merger) const {
+void MCTSNode::undo(state_merger* merger) const {
     if (currentRef == nullptr) return;
     currentRef->undo(merger);
 }
 
-void MCTSNode::doRef(state_merger *merger) const {
+void MCTSNode::doRef(state_merger* merger) const {
     if (currentRef == nullptr) return;
     currentRef->doref(merger);
 }

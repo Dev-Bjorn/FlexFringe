@@ -11,7 +11,6 @@ std::unique_ptr<QualityEvaluation> createQualityEvaluation(const std::string_vie
         {"model-size", [&]() { return std::make_unique<ModelSizeEvaluator>(); }},
     };
     const auto it = table.find(toLower(evaluator));
-    if (it == table.end())
-        throw std::invalid_argument("Unknown State Evaluator: " + std::string(evaluator));
+    if (it == table.end()) throw std::invalid_argument("Unknown State Evaluator: " + std::string(evaluator));
     return it->second();
 }
