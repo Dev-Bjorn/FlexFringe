@@ -37,39 +37,39 @@ private:
 public:
     explicit MCTS(const MCTSConfig &cfg, state_merger *merger);
 
-    std::shared_ptr<MCTSNode> getRoot() const {
+    [[nodiscard]] std::shared_ptr<MCTSNode> getRoot() const {
         return root;
     }
 
-    std::shared_ptr<MCTSNodeFactory> getNodeFactory() const {
+    [[nodiscard]] std::shared_ptr<MCTSNodeFactory> getNodeFactory() const {
         return nodeFactory;
     }
 
-    MCTSConfig getConfig() const {
+    [[nodiscard]] MCTSConfig getConfig() const {
         return config;
     }
 
-    state_merger* getMerger() const {
+    [[nodiscard]] state_merger* getMerger() const {
         return merger;
     }
 
     bool isConverged(const std::shared_ptr<MCTSNode>& expandedNode, const refinement_vector& rolloutLog) const;
 
-    std::shared_ptr<MCTSNode> select() const;
+    [[nodiscard]]std::shared_ptr<MCTSNode> select() const;
 
-    std::shared_ptr<MCTSNode> expand(const std::shared_ptr<MCTSNode> &node) const;
+    [[nodiscard]]std::shared_ptr<MCTSNode> expand(const std::shared_ptr<MCTSNode> &node) const;
 
-    refinement_vector rollout(const std::shared_ptr<MCTSNode> &rolloutNode) const;
+    [[nodiscard]]refinement_vector rollout(const std::shared_ptr<MCTSNode> &rolloutNode) const;
 
     void backPropagation(const std::shared_ptr<MCTSNode> &rolloutNode, const refinement_vector &log) const;
 
     static void eraseRollout(const refinement_vector &log);
 
-    refinement_vector finishExpansion(const std::shared_ptr<MCTSNode> &lastChild, refinement_vector &log) const;
+    [[nodiscard]] refinement_vector finishExpansion(const std::shared_ptr<MCTSNode> &lastChild, refinement_vector &log) const;
 
-    refinement_vector expandLog(const std::shared_ptr<MCTSNode> &node, const refinement_vector &expansionLog) const;
+    [[nodiscard]] refinement_vector expandLog(const std::shared_ptr<MCTSNode> &node, const refinement_vector &expansionLog) const;
 
-    refinement_vector undoNode(const std::shared_ptr<MCTSNode> &node, const refinement_vector &expansionLog = {}) const;
+    [[nodiscard]] refinement_vector undoNode(const std::shared_ptr<MCTSNode> &node, const refinement_vector &expansionLog = {}) const;
 };
 
 #endif //FLEXFRINGE_MCTS_HPP

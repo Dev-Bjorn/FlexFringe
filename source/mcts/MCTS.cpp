@@ -78,7 +78,6 @@ refinement_vector MCTS::rollout(const std::shared_ptr<MCTSNode> &rolloutNode) co
 
     refinement_vector log{};
 
-
     auto [refs, extendRefs] = merger->get_refinements();
 
     int step = 0;
@@ -118,6 +117,7 @@ refinement_vector MCTS::rollout(const std::shared_ptr<MCTSNode> &rolloutNode) co
 }
 
 void MCTS::backPropagation(const std::shared_ptr<MCTSNode> &rolloutNode, const refinement_vector &log) const {
+
     const double score = stateEvaluator->evaluate(merger);
     rolloutNode->setScore(score);
 
@@ -125,6 +125,7 @@ void MCTS::backPropagation(const std::shared_ptr<MCTSNode> &rolloutNode, const r
         it->undo(merger);
     }
 
+    // Propagate the result up towards the root
     auto node = rolloutNode;
     while (node != nullptr) {
         node->updateContext(score);
@@ -142,8 +143,11 @@ void MCTS::eraseRollout(const refinement_vector& log) {
 
 refinement_vector MCTS::finishExpansion(const std::shared_ptr<MCTSNode> &lastChild, refinement_vector& log) const {
     if (!config.USE_FINISHER) return log;
+    LOG_S(INFO) << "Preparing finisher algorithm";
     auto comparison_algorithm = createAlgorithm(config.FINISH_ALGORITHM, merger, stateEvaluator, this->nodeFactory);
+    LOG_S(INFO) << "Starting finisher algorithm";
     auto finishLog = comparison_algorithm->run(lastChild, AlgorithmType::finisher);
+    LOG_S(INFO) << "Finisher algorithm finished";
     auto combined = log;
     combined.insert(combined.end(), finishLog.begin(), finishLog.end());
     return combined;
@@ -152,7 +156,7 @@ refinement_vector MCTS::finishExpansion(const std::shared_ptr<MCTSNode> &lastChi
 refinement_vector MCTS::expandLog(const std::shared_ptr<MCTSNode> &node, const refinement_vector &expansionLog) const {
     refinement_vector log{};
 
-    // Get the ascendent log
+    // Get the ascendant log
     std::shared_ptr<MCTSNode> n = node;
     while (n->getParent() != nullptr) {
         log.push_back(n->getRefinement());
@@ -168,7 +172,7 @@ refinement_vector MCTS::expandLog(const std::shared_ptr<MCTSNode> &node, const r
     n = node;
     auto it = expansionLog.begin();
 
-    // Procedure to find last child
+    // Find last overlapping child with the log.
     while (true) {
         const auto current = *it;
         std::shared_ptr<MCTSNode> selected = nullptr;
@@ -179,9 +183,7 @@ refinement_vector MCTS::expandLog(const std::shared_ptr<MCTSNode> &node, const r
             }
         }
 
-        if (selected == nullptr) {
-            break;
-        }
+        if (selected == nullptr) break;
 
         current->doref(merger);
         log.push_back(current);
@@ -201,6 +203,7 @@ refinement_vector MCTS::expandLog(const std::shared_ptr<MCTSNode> &node, const r
 
     auto finishedLog = finishExpansion(n, log);
 
+    // Bring state merger back to original state
     for (auto iterator = log.rbegin(); iterator != log.rend(); ++iterator) {
         (*iterator)->undo(merger);
     }
@@ -210,6 +213,7 @@ refinement_vector MCTS::expandLog(const std::shared_ptr<MCTSNode> &node, const r
 
 refinement_vector MCTS::undoNode(const std::shared_ptr<MCTSNode> &node, const refinement_vector &expansionLog) const {
     refinement_vector log{};
+    // Undo is the reverse operation of applying, so start at the end of the log and work towards the root.
     for (auto it = expansionLog.rbegin(); it != expansionLog.rend(); ++it) {
         log.push_back(*it);
         (*it)->undo(merger);

@@ -38,7 +38,7 @@ refinement_vector selectNode(const MCTS& mcts) {
         if (converged) {
             return mcts.expandLog(rolloutNode, log);
         } else {
-            mcts.eraseRollout(log);
+            MCTS::eraseRollout(log);
         }
 
         node = mcts.select();
@@ -95,7 +95,7 @@ void eraseAllRefs(const std::shared_ptr<MCTSNode> &node) {
             refinement->erase();
         }
 
-        for (auto child: n->getChildren()) {
+        for (const auto& child: n->getChildren()) {
             queue.push(child);
         }
     }
