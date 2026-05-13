@@ -11,13 +11,18 @@
  */
 struct ScoreImprovementConvergence : ConvergencePolicy {
 private:
+    std::shared_ptr<QualityEvaluation> evaluator;
     unsigned int maxNoImprovementIterations;
+    int          bestScore = std::numeric_limits<int>::max();
 
 public:
-    explicit ScoreImprovementConvergence(std::shared_ptr<QualityEvaluation> qualityEvaluation, const int maxNoImprovementIterations) : ConvergencePolicy(std::move(qualityEvaluation)), maxNoImprovementIterations(maxNoImprovementIterations) {
+    explicit ScoreImprovementConvergence(
+        const std::shared_ptr<QualityEvaluation> evaluator,
+        const int maxNoImprovementIterations
+    ) : evaluator(std::move(evaluator)), maxNoImprovementIterations(maxNoImprovementIterations) {
     };
 
-    bool isConverged(const state_merger* merger, const std::shared_ptr<MCTSNode>& expansion, const refinement_vector& refinements) override;
+    bool isConverged(const std::shared_ptr<MCTSNode>& expansion, const refinement_vector& refinements) override;
 };
 
 #endif //FLEXFRINGE_SCORE_IMPROVEMENT_CONVERGENCE_H

@@ -50,7 +50,7 @@ public:
         std::shared_ptr<MCTSNode> parent
     );
 
-    std::shared_ptr<MCTSNode> createMCTSNode(refinement* ref, int dfaSize, const refinement_vector& possibleRefs, const refinement_vector& extendRefs, std::shared_ptr<MCTSNode> parent);
+    std::shared_ptr<MCTSNode> createMCTSNode(refinement* ref, int dfaSize, const refinement_vector& possibleRefs, const refinement_vector& extendRefs, const std::shared_ptr<MCTSNode>& parent);
 };
 
 #endif //FLEXFRINGE_MCTS_NODE_FACTORY_H

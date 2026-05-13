@@ -322,16 +322,16 @@ void refinement::print_refinement_list_json(iostream& output, refinement_list* l
     output << "]\n";
 };
 
-int refinement::type(){
+int refinement::type() const {
     return 0;
 }
-int split_refinement::type(){
+int split_refinement::type() const{
     return 1;
 }
-int merge_refinement::type(){
+int merge_refinement::type() const{
     return 2;
 }
-int extend_refinement::type(){
+int extend_refinement::type() const{
     return 3;
 }
 

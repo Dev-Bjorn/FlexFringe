@@ -3,13 +3,15 @@
 //
 
 #include <mcts/MCTS.h>
+#include <mcts/Refinements.h>
 #include <mcts/node/MCTSNode.h>
 
 MCTSNode::MCTSNode(
     const int                        id,
+    const int                        dfaSize,
+    const int                        height,
     const std::shared_ptr<NodeData>& context,
     refinement*                      ref,
-    const int                        dfaSize,
     refinement_vector                possibleRefs,
     refinement_vector                extendRefs,
     std::shared_ptr<MCTSNode>        parent
@@ -17,6 +19,7 @@ MCTSNode::MCTSNode(
     context(context),
     currentRef(ref),
     dfaSize(dfaSize),
+    height(height),
     refs(std::move(possibleRefs)),
     extendRefs(std::move(extendRefs)),
     unvisitedRefs(this->refs),
@@ -42,18 +45,6 @@ bool MCTSNode::isVisited(refinement* refinement) const {
     }
 }
 
-bool equal(refinement* ref1, refinement* ref2) {
-    if (ref1 == ref2) return true;
-    if (ref1->type() != ref2->type()) return false;
-    if (ref1->red->get_number() != ref2->red->get_number()) return false;
-    if (ref1->type() == 3) return true;
-    if (ref1->type() == 2) {
-        auto mr1 = dynamic_cast<const merge_refinement*>(ref1);
-        auto mr2 = dynamic_cast<const merge_refinement*>(ref2);
-        return mr1->blue->get_number() == mr2->blue->get_number();
-    }
-}
-
 size_t findIndex(const refinement_vector& refs, const int index, refinement* refinement) {
     if (index < 0 || static_cast<std::size_t>(index) >= refs.size()) {
         for (size_t i = 0; i < refs.size(); ++i) {
@@ -74,7 +65,7 @@ void MCTSNode::expand(std::shared_ptr<MCTSNode> child, const int index) {
         throw std::out_of_range("non-existing refinement index");
     }
 
-    if (idx == mutRef.size() - 1) mutRef[idx] = std::move(mutRef.back());
+    if (idx != mutRef.size() - 1) mutRef[idx] = std::move(mutRef.back());
     mutRef.pop_back();
 
     children.push_back(std::move(child));

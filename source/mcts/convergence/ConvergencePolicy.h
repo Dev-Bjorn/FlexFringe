@@ -10,40 +10,18 @@
 
 struct ConvergencePolicy {
 protected:
-    std::shared_ptr<QualityEvaluation> evaluator;
-    size_t                             iteration = 0;
-    int                                bestScore = std::numeric_limits<int>::max();
-    std::shared_ptr<MCTSNode>          bestNode;
-    refinement_vector                  bestRefinements;
+    size_t iteration = 0;
 
 public:
-    /**
-     * Create a convergence policy with the specified quality evaluation strategy.
-     * @param evaluator The quality evaluation strategy for convergence detection.
-     */
-    explicit ConvergencePolicy(std::shared_ptr<QualityEvaluation> evaluator) : evaluator(std::move(evaluator)) {
-    }
-
     virtual ~ConvergencePolicy() = default;
 
     /**
      * Check whether the MCTS algorithm has converged based on the provided state merger, expansion node, and rollout refinements.
-     * @param merger The state merger used for merging states.
      * @param expansion The expansion node being considered for convergence.
      * @param refinements The vector of refinements applied during the rollout MCTS process.
      * @return True if convergence is detected, false otherwise.
      */
-    virtual bool isConverged(const state_merger* merger, const std::shared_ptr<MCTSNode>& expansion, const refinement_vector& refinements) = 0;
-
-    /**
-     * The best expansion node.
-     */
-    [[nodiscard]] inline std::shared_ptr<MCTSNode> getBestNode() const { return bestNode; };
-
-    /**
-     * The best rollout refinement log in the order from the best node to the leaf.
-     */
-    [[nodiscard]] inline const refinement_vector& getBestRefinement() const { return bestRefinements; };
+    virtual bool isConverged(const std::shared_ptr<MCTSNode>& expansion, const refinement_vector& refinements) = 0;
 };
 
 /**

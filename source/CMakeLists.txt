@@ -161,6 +161,10 @@ add_library(Source STATIC
         mcts/convergence/ScoreImprovementConvergence.h
         mcts/AlgorithmTypes.h
         mcts/AlgorithmTypes.cpp
+        mcts/action/WeightedAction.cpp
+        mcts/action/WeightedAction.h
+        mcts/convergence/NodeTerminalConvergence.cpp
+        mcts/convergence/NodeTerminalConvergence.h
 )
 
 ## create CMakeLists.txt in evaluation directory

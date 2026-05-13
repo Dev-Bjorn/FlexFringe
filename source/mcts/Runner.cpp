@@ -11,44 +11,8 @@
 #include <mcts/node/printer/DotPrinter.h>
 #include <mcts/node/printer/JSONPrinter.h>
 
+
 // The MCTS Hot loop
-refinement_vector selectNode(const MCTS& mcts) {
-    auto node = mcts.select();
-
-    while (!node->isTerminal()) {
-        LOG_S(INFO) << "Selected node: " << node->toString() << " with APTA size: " << mcts.getMerger()->get_final_apta_size();
-        // AUTO expand when only one unvisited refinement or extend refinement is available
-        if (mcts.getConfig().AUTO_EXPAND_ONE_CHILD && (node->getRefinements().size() + node->getExtendRefinements().size()) == 1) {
-            LOG_S(INFO) << "Auto expanding node: " << node->toString();
-            node = mcts.expand(node);
-            continue;
-        }
-        auto rolloutNode = mcts.expand(node);
-
-        if (rolloutNode == nullptr) {
-            return mcts.undoNode(node);
-        }
-        const auto log = mcts.rollout(rolloutNode);
-        LOG_S(INFO) << "Current Expansion: " << rolloutNode->toString() << " after rollout has size: " << mcts.getMerger()->get_final_apta_size();
-
-        const bool converged = !mcts.getConfig().FORCE_UNTIL_TERMINAL && mcts.isConverged(rolloutNode, log);
-
-        mcts.backPropagation(rolloutNode, log);
-
-        if (converged) {
-            return mcts.expandLog(rolloutNode, log);
-        } else {
-            MCTS::eraseRollout(log);
-        }
-
-        node = mcts.select();
-    }
-    LOG_S(INFO) << "Final node: " << node->toString() << " with APTA size: " << mcts.getMerger()->get_final_apta_size();
-    LOG_S(INFO) << "Final node score: " << node->getScore();
-
-    return mcts.undoNode(node);
-}
-
 refinement_vector getComparisonResult(state_merger* merger, const MCTS& mcts) {
     std::unique_ptr<QualityEvaluation> evaluator = createQualityEvaluation(mcts.getConfig().QUALITY_EVALUATOR_POLICY);
     const std::unique_ptr<Algorithm>   algorithm = createAlgorithm(mcts.getConfig().COMPARISON_ALGORITHM, merger, std::move(evaluator), mcts.getNodeFactory());
@@ -138,8 +102,8 @@ void runMCTS(std::unordered_map<std::string, std::tuple<state_merger*, evaluatio
 
     LOG_S(INFO) << "End of Preparation, Starting MCTS run";
 
-    const auto mcts        = MCTS(config, mcts_state_merger);
-    const auto refinements = selectNode(mcts);
+    auto       mcts        = MCTS(config, mcts_state_merger);
+    const auto refinements = mcts.selectNode();
     LOG_S(INFO) << "MCTS Complete, starting comparison algorithm";
     CURRENT_CONFIG = greedyConfig;
 

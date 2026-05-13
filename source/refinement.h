@@ -58,7 +58,7 @@ public:
 
     static void print_refinement_list_json(std::iostream &output, refinement_list *list);
 
-    virtual int type();
+    virtual int type() const;
 
     inline int get_time();
 };
@@ -86,7 +86,7 @@ public:
 
     virtual void print_json(std::iostream &output) const;
 
-    virtual int type();
+    virtual int type() const;
 };
 
  /**
@@ -109,7 +109,7 @@ public:
 
     virtual void print_json(std::iostream &output) const;
 
-    virtual int type();
+    virtual int type() const;
 };
 
 /**
@@ -134,7 +134,7 @@ public:
 
     virtual void print_json(std::iostream &output) const;
 
-    virtual int type();
+    virtual int type() const;
 };
 
  /**

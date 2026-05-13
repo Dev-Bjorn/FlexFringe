@@ -27,6 +27,8 @@ void JSONPrinter::print_node(const std::shared_ptr<MCTSNode>& node, const int de
     std::unordered_map<std::string, std::string> attributeMap = {
         {"id", std::to_string(node->getId())},
         {"score", std::to_string(node->getScore())},
+        {"height", std::to_string(node->getHeight())},
+        {"visits", std::to_string(node->getContext() == nullptr ? 0 : node->getContext()->getVisits())},
         {"dfaSize", std::to_string(node->getDFASize())},
         {"refinement", "\"" + getRefinementName(node->getRefinement()) + "\""},
         {"involvedNodes", "[" + involvedRefinementNodes(node->getRefinement()) + "]"},
@@ -76,13 +78,13 @@ void JSONPrinter::add_unvisited(const std::shared_ptr<MCTSNode>& node) {
         return;
 
     for (auto ref: node->getUnvisitedRefinements()) {
-        auto child = std::make_shared<MCTSNode>(unvisited--, nullptr, ref, -1, refinement_vector{}, refinement_vector{}, node);
+        auto child = std::make_shared<MCTSNode>(unvisited--, -1, node->getHeight() + 1, nullptr, ref, refinement_vector{}, refinement_vector{}, node);
         nodes.push_back(child);
         edges.push_back({node->getId(), child->getId(), 0});
     }
 
     for (auto ref: node->getUnvisitedExtendRefinements()) {
-        auto child = std::make_shared<MCTSNode>(unvisited--, nullptr, ref, -1, refinement_vector{}, refinement_vector{}, node);
+        auto child = std::make_shared<MCTSNode>(unvisited--, -1, node->getHeight() + 1, nullptr, ref, refinement_vector{}, refinement_vector{}, node);
         nodes.push_back(child);
         edges.push_back({node->getId(), child->getId(), 0});
     }

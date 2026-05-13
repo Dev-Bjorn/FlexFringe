@@ -5,6 +5,7 @@
 
 #include <ranges>
 #include <mcts/MCTS.h>
+#include <mcts/Refinements.h>
 #include <mcts/action/ActionSelectionPolicy.h>
 #include <mcts/comparison/Algorithm.h>
 #include <mcts/selection/SelectionSearchPolicy.h>
@@ -12,8 +13,8 @@
 
 
 MCTS::MCTS(const MCTSConfig& cfg, state_merger* merger) : config(cfg), merger(merger) {
-    rolloutActionSelector = createActionPolicy(cfg.ROLLOUT_ACTION_POLICY, cfg);
-    expandActionPolicy    = createActionPolicy(cfg.EXPANSION_ACTION_POLICY, cfg);
+    rolloutActionSelector = createActionPolicy(cfg.ROLLOUT_ACTION_POLICY, cfg, false);
+    expandActionPolicy    = createActionPolicy(cfg.EXPANSION_ACTION_POLICY, cfg, true);
 
     auto nodeSelectionPolicy = createNodeSelectionPolicy(cfg.NODE_SELECTION_POLICY, cfg);
     expansionRulePolicy      = createExpansionRulePolicy(cfg.EXPANSION_RULE_POLICY);
@@ -41,8 +42,11 @@ std::shared_ptr<MCTSNode> MCTS::select() const {
 }
 
 bool MCTS::isConverged(const std::shared_ptr<MCTSNode>& expandedNode, const refinement_vector& rolloutLog) const {
+    if (config.FORCE_UNTIL_TERMINAL && rolloutLog.size() == 0) {
+        return false;
+    }
     for (const auto& policy: convergencePolicy) {
-        if (policy->isConverged(merger, expandedNode, rolloutLog)) {
+        if (policy->isConverged(expandedNode, rolloutLog)) {
             return true;
         }
     }
@@ -51,7 +55,7 @@ bool MCTS::isConverged(const std::shared_ptr<MCTSNode>& expandedNode, const refi
 
 std::shared_ptr<MCTSNode> MCTS::expand(const std::shared_ptr<MCTSNode>& node) const {
     // Meaning the node cannot be expanded
-    if (!expansionRulePolicy->isExpandable(node)) return nullptr;
+    if (!expansionRulePolicy->isExpandable(node)) return node;
 
     auto [refs, index] = expandActionPolicy->action(
         node->getUnvisitedRefinements(),
@@ -72,6 +76,7 @@ std::shared_ptr<MCTSNode> MCTS::expand(const std::shared_ptr<MCTSNode>& node) co
 
     return childNode;
 }
+
 
 refinement_vector MCTS::rollout(const std::shared_ptr<MCTSNode>& rolloutNode) const {
     if (rolloutNode->isTerminal()) return {};
@@ -116,12 +121,11 @@ refinement_vector MCTS::rollout(const std::shared_ptr<MCTSNode>& rolloutNode) co
     return log;
 }
 
-void MCTS::backPropagation(const std::shared_ptr<MCTSNode>& rolloutNode, const refinement_vector& log) const {
-    const double score = stateEvaluator->evaluate(merger);
+bool MCTS::backPropagation(double score, const std::shared_ptr<MCTSNode>& rolloutNode, const refinement_vector& log) {
     rolloutNode->setScore(score);
 
-    for (const auto it: std::views::reverse(log)) {
-        it->undo(merger);
+    for (auto it = log.rbegin(); it != log.rend(); ++it) {
+        (*it)->undo(merger);
     }
 
     // Propagate the result up towards the root
@@ -132,6 +136,18 @@ void MCTS::backPropagation(const std::shared_ptr<MCTSNode>& rolloutNode, const r
 
         node = node->getParent();
     }
+
+    if (stateEvaluator->compare(score, bestScore)) {
+        eraseRollout(bestRefinements);
+        LOG_S(INFO) << "New best score: " << score << " at node: " << rolloutNode->toString();
+
+        auto copy = log;
+        bestScore       = score;
+        bestNode        = rolloutNode;
+        bestRefinements = copy;
+        return false;
+    }
+    return true;
 }
 
 void MCTS::eraseRollout(const refinement_vector& log) {
@@ -152,11 +168,13 @@ refinement_vector MCTS::finishExpansion(const std::shared_ptr<MCTSNode>& lastChi
     return combined;
 }
 
-refinement_vector MCTS::expandLog(const std::shared_ptr<MCTSNode>& node, const refinement_vector& expansionLog) const {
+refinement_vector MCTS::expandBestLog() const {
+    if (bestNode == nullptr) return {};
+
     refinement_vector log{};
 
     // Get the ascendant log
-    std::shared_ptr<MCTSNode> n = node;
+    std::shared_ptr<MCTSNode> n = bestNode;
     while (n->getParent() != nullptr) {
         log.push_back(n->getRefinement());
         n = n->getParent();
@@ -168,15 +186,15 @@ refinement_vector MCTS::expandLog(const std::shared_ptr<MCTSNode>& node, const r
         (*it)->doref(merger);
     }
 
-    n       = node;
-    auto it = expansionLog.begin();
+    n       = bestNode;
+    auto it = bestRefinements.begin();
 
     // Find last overlapping child with the log.
-    while (true) {
+    while (it != bestRefinements.end()) {
         const auto                current  = *it;
         std::shared_ptr<MCTSNode> selected = nullptr;
         for (const auto& ref: n->getChildren()) {
-            if (ref->getRefinement() == current) {
+            if (equal(current, ref->getRefinement())) {
                 selected = ref;
                 break;
             }
@@ -191,7 +209,7 @@ refinement_vector MCTS::expandLog(const std::shared_ptr<MCTSNode>& node, const r
     }
 
     // Expand last node towards the end of the log
-    for (; it != expansionLog.end(); ++it) {
+    for (; it != bestRefinements.end(); ++it) {
         log.push_back(*it);
         (*it)->doref(merger);
         auto       [newRefs, newExtendRefs] = merger->get_refinements();
@@ -210,22 +228,44 @@ refinement_vector MCTS::expandLog(const std::shared_ptr<MCTSNode>& node, const r
     return finishedLog;
 }
 
-refinement_vector MCTS::undoNode(const std::shared_ptr<MCTSNode>& node, const refinement_vector& expansionLog) const {
-    refinement_vector log{};
-    // Undo is the reverse operation of applying, so start at the end of the log and work towards the root.
-    for (auto it = expansionLog.rbegin(); it != expansionLog.rend(); ++it) {
-        log.push_back(*it);
-        (*it)->undo(merger);
+refinement_vector MCTS::selectNode() {
+    auto node = select();
+
+    while (node != nullptr) {
+        LOG_S(INFO) << "Selected node: " << node->toString() << " with APTA size: " << merger->get_final_apta_size();
+        // AUTO expand when only one unvisited refinement or extend refinement is available
+        if (config.AUTO_EXPAND_ONE_CHILD && (node->getRefinements().size() + node->getExtendRefinements().size()) == 1) {
+            LOG_S(INFO) << "Auto expanding node: " << node->toString();
+
+            // The auto expansion always preserves the same score, since parent
+            // must always go through this node, the assumption can be made, that
+            // the current node is also a path to that scoring node.
+            auto parentScore = node->getScore();
+            node             = expand(node);
+            if (node == nullptr) break;
+            backPropagation(parentScore, node, refinement_vector{});
+            node = select();
+            continue;
+        }
+        auto rolloutNode = expand(node);
+
+        if (rolloutNode == nullptr) break;
+
+        const auto log = rollout(rolloutNode);
+        LOG_S(INFO) << "Current Expansion: " << rolloutNode->toString() << " after " << log.size() << " rollout steps has APTA size: " << merger->get_final_apta_size();
+        const auto score = stateEvaluator->evaluate(merger);
+
+        // Placed before backpropagation
+        if (backPropagation(score, rolloutNode, log)) MCTS::eraseRollout(log);
+        if (isConverged(rolloutNode, log)) {
+            LOG_S(INFO) << "Convergence detected at node: " << rolloutNode->toString();
+            break;
+        };
+
+        node = select();
     }
 
-    auto n = node;
-    while (n != nullptr) {
-        if (n->getRefinement() != nullptr) log.push_back(n->getRefinement());
-        n->undo(merger);
-        n = n->getParent();
-    }
-
-    std::ranges::reverse(log);
-
-    return log;
+    LOG_S(INFO) << "Finished selecting node";
+    LOG_S(INFO) << "Best node: " << bestNode->toString() << " with best score " << bestScore;
+    return expandBestLog();
 }

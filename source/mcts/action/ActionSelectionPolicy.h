@@ -24,8 +24,9 @@ struct ActionSelectionPolicy {
  * Construct the action selection policy
  * @param policy The name of the action selection policy to create
  * @param config The configuration parameters for the action selection policy
+ * @param isExpansion Indicates whether the policy is for expansion or rollout
  * @return A unique pointer to the created action selection policy
  */
-std::unique_ptr<ActionSelectionPolicy> createActionPolicy(std::string_view policy, const MCTSConfig& config);
+std::unique_ptr<ActionSelectionPolicy> createActionPolicy(const std::string_view policy, const MCTSConfig& config, const bool isExpansion);
 
 #endif //FLEXFRINGE_ACTION_SELECTION_POLICY_H

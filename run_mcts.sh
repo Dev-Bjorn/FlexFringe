@@ -5,7 +5,7 @@ RUNNER="$PROJECT_DIR/cmake-build-release/flexfringe.exe"
 RESULTS_BASE="$PROJECT_DIR/results/mcts"
 RUNS=${1:-1}
 PARAMS=${2:-1}
-PROBLEM=${3:-"$PROJECT_DIR/data/PAutomaC-competition_sets/1.pautomac.train.dat"}
+PROBLEM=${3:-"$PROJECT_DIR/data/staminadata/12_training.txt.dat"}
 
 # Find next available run number
 RUN=1

@@ -35,16 +35,16 @@
 // during make, so contributors don't have to
 // touch anything than their own files
 std::string COMMAND;
-bool debugging_enabled = false;
+bool        debugging_enabled = false;
 
 /*
  * Input parameters, see 'man popt'
  */
 
-evaluation_function *get_evaluation(std::string heuristic_name) {
-    evaluation_function *eval = nullptr;
+evaluation_function* get_evaluation(std::string heuristic_name) {
+    evaluation_function* eval = nullptr;
     if (debugging_enabled) {
-        for (auto &myit: *DerivedRegister<evaluation_function>::getMap()) {
+        for (auto& myit: *DerivedRegister<evaluation_function>::getMap()) {
             std::cout << myit.first << " " << myit.second << std::endl;
         }
     }
@@ -52,14 +52,14 @@ evaluation_function *get_evaluation(std::string heuristic_name) {
         eval = (DerivedRegister<evaluation_function>::getMap())->at(heuristic_name)();
         std::cout << "Using heuristic " << heuristic_name << std::endl;
         LOG_S(INFO) << "Using heuristic " << heuristic_name;
-    } catch (const std::out_of_range &oor) {
+    } catch (const std::out_of_range& oor) {
         LOG_S(WARNING) << "No named heuristic found, defaulting back on -h flag";
         std::cerr << "No named heuristic found, defaulting back on -h flag" << std::endl;
     }
     return eval;
 }
 
-void read_input_file(inputdata *id) {
+void read_input_file(inputdata* id) {
     std::ifstream input_stream(INPUT_FILE);
 
     if (!input_stream) {
@@ -94,24 +94,24 @@ void read_input_file(inputdata *id) {
     }
 }
 
-void runMCTS(inputdata &id, std::unordered_map<std::string, evaluation_function *> &evals) {
+void runMCTS(inputdata& id, std::unordered_map<std::string, evaluation_function*>& evals) {
     std::cout << "MCTS mode selected" << std::endl;
 
     if (OUTPUT_FILE.empty()) OUTPUT_FILE = INPUT_FILE + ".ff";
 
-    apta *the_apta = new apta();
-    std::unordered_map<std::string, std::tuple<state_merger *, evaluation_function *> > merger_evals{};
+    apta*                                                                            the_apta = new apta();
+    std::unordered_map<std::string, std::tuple<state_merger*, evaluation_function*>> merger_evals{};
 
 
     std::cout << "Creating apta and state mergers." << std::endl;
-    for (auto &[key, eval]: evals) {
+    for (auto& [key, eval]: evals) {
         if (!ACTIVE_HEURISTICS.contains(key)) continue;
-        state_merger *merger = new state_merger(&id, eval, the_apta);
+        state_merger* merger = new state_merger(&id, eval, the_apta);
         eval->set_context(merger);
         merger_evals[key] = std::make_tuple(merger, eval);
     }
 
-    for (auto &[k, eval]: evals) {
+    for (auto& [k, eval]: evals) {
         if (!ACTIVE_HEURISTICS.contains(k)) continue;
         CURRENT_CONFIG = getConfiguration(k);
         eval->initialize_before_adding_traces();
@@ -120,7 +120,7 @@ void runMCTS(inputdata &id, std::unordered_map<std::string, evaluation_function 
     for (auto [k, v]: merger_evals) {
         if (!ACTIVE_HEURISTICS.contains(k)) continue;
         auto [merger, eval] = v;
-        CURRENT_CONFIG = getConfiguration(k);
+        CURRENT_CONFIG      = getConfiguration(k);
         eval->initialize_after_adding_traces(merger);
     }
 
@@ -156,8 +156,8 @@ void run() {
     }
 
     if (OPERATION_MODE == "mcts") {
-        std::unordered_map<std::string, evaluation_function *> evals;
-        for (const auto &cfg: HEURISTIC_CONFIGS) {
+        std::unordered_map<std::string, evaluation_function*> evals;
+        for (const auto& cfg: HEURISTIC_CONFIGS) {
             evals[cfg.CONFIG_NAME] = get_evaluation(cfg.HEURISTIC_NAME);
         }
         runMCTS(id, evals);
@@ -165,9 +165,9 @@ void run() {
         return;
     }
 
-    apta *the_apta = new apta();
-    evaluation_function *eval = get_evaluation(CURRENT_CONFIG.HEURISTIC_NAME);
-    auto *merger = new state_merger(&id, eval, the_apta);
+    apta*                the_apta = new apta();
+    evaluation_function* eval     = get_evaluation(CURRENT_CONFIG.HEURISTIC_NAME);
+    auto*                merger   = new state_merger(&id, eval, the_apta);
     eval->set_context(merger);
 
     std::cout << "Creating apta " << "using evaluation class " << CURRENT_CONFIG.HEURISTIC_NAME << std::endl;
@@ -248,13 +248,13 @@ void run() {
             std::ostringstream res_stream;
             res_stream << APTA_FILE << ".result"; // << ".dot";
             std::ofstream output(res_stream.str().c_str());
-            std::fstream output2(res_stream.str().c_str(), std::ios_base::out);
+            std::fstream  output2(res_stream.str().c_str(), std::ios_base::out);
 
             //the_apta->print_dot(output2);
 
             // We stream the to predict traces into inputdata one by one to save memory
             // Set up the parser for the input stream
-            std::ifstream input_stream(INPUT_FILE);
+            std::ifstream           input_stream(INPUT_FILE);
             std::unique_ptr<parser> parser;
             if (INPUT_FILE.ends_with(".csv")) {
                 parser = std::make_unique<csv_parser>(input_stream, csv::CSVFormat().trim({' '}));
@@ -288,7 +288,7 @@ void run() {
             std::cerr << "reading apta file - " << APTA_FILE << std::endl;
             the_apta->read_json(input_apta_stream);
 
-            apta *the_apta2 = new apta();
+            apta*         the_apta2 = new apta();
             std::ifstream input_apta_stream2(APTA_FILE2);
             std::cerr << "reading apta file - " << APTA_FILE2 << std::endl;
             the_apta2->read_json(input_apta_stream2);
@@ -314,7 +314,7 @@ void run() {
  *
  */
 #ifndef UNIT_TESTING
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
     for (int i = 0; i < argc; i++) {
         COMMAND_LINE += std::string(argv[i]) + std::string(" ");
     }
@@ -420,10 +420,12 @@ int main(int argc, char *argv[]) {
     mcts_cmd->add_option("--expansion-action-seed", MCTS_CONFIG.EXPANSION_ACTION_SEED, "Seed for roulette action policy. Default: 42.");
     mcts_cmd->add_option("--expansion-rule-policy", MCTS_CONFIG.EXPANSION_RULE_POLICY, "The policy that determines whether a node can be expanded for MCTS. Default: full.");
     mcts_cmd->add_option("--expansion-action-policy", MCTS_CONFIG.EXPANSION_ACTION_POLICY, "The policy that determines which action to take during expansion. Default: first.");
+    mcts_cmd->add_option("--expansion-weighted-extend-scoring", MCTS_CONFIG.EXPANSION_WEIGHTED_EXTEND_SCORING, "Use a weight scoring metric to define the extend scores, when not provided by EXTEND_SCORING, using the \"weighted\" policy. Default: avg.");
 
     mcts_cmd->add_option("--max-rollout-steps", MCTS_CONFIG.MAX_ROLLOUT_STEPS, "Maximum number of rollout steps. Default: 1000.");
     mcts_cmd->add_option("--rollout-action-policy", MCTS_CONFIG.ROLLOUT_ACTION_POLICY, "The policy that determines which action to take during rollout. Default: uniform.");
     mcts_cmd->add_option("--rollout-action-seed", MCTS_CONFIG.ROLLOUT_ACTION_SEED, "Seed for uniform action policy. Default: 42.");
+    mcts_cmd->add_option("--rollout-weighted-extend-scoring", MCTS_CONFIG.ROLLOUT_WEIGHTED_EXTEND_SCORING,  "Use a weight scoring metric to define the extend scores, when not provided by EXTEND_SCORING, using the \"weighted\" policy. Default: avg.");
 
     mcts_cmd->add_option("--node-selection-policy", MCTS_CONFIG.NODE_SELECTION_POLICY, "Selection policy for MCTS. Default: lcb1.");
     mcts_cmd->add_option("--selection-search-policy", MCTS_CONFIG.SELECTION_SEARCH_METHOD, "The search method used for node selection. Default: bfs.");
@@ -441,7 +443,7 @@ int main(int argc, char *argv[]) {
 
 
     HeuristicConfig current;
-    auto *hcmd = app.add_subcommand("heuristic", "Add a heuristic configuration");
+    auto*           hcmd = app.add_subcommand("heuristic", "Add a heuristic configuration");
     app.needs(hcmd);
     hcmd->callback(
         [&]() {
@@ -528,7 +530,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (active_heuristics.empty()) {
-        for (auto &h: HEURISTIC_CONFIGS) {
+        for (auto& h: HEURISTIC_CONFIGS) {
             ACTIVE_HEURISTICS.insert(h.CONFIG_NAME);
         }
     } else {

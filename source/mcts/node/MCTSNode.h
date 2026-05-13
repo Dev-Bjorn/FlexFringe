@@ -20,6 +20,7 @@ private:
     double                            score      = -1;
     int                               dfaSize;
     std::unordered_set<AlgorithmType> nodeType;
+    int                               height;
 
     // --------------------- ACTIONS ----------------------
     // All possible actions that follow from this node are stored in the node
@@ -41,9 +42,10 @@ public:
 
     explicit MCTSNode(
         int                              id,
+        int                              dfaSize,
+        int                              height,
         const std::shared_ptr<NodeData>& context,
         refinement*                      ref,
-        int                              dfaSize,
         refinement_vector                possibleRefs,
         refinement_vector                extendRefs,
         std::shared_ptr<MCTSNode>        parent
@@ -62,6 +64,7 @@ public:
     [[nodiscard]] inline refinement_vector                             getUnvisitedExtendRefinements() const { return unvisitedExtendRefs; };
     [[nodiscard]] inline bool                                          isInAlgorithm(AlgorithmType algorithm) const { return nodeType.contains(algorithm); };
     [[nodiscard]] inline int                                           getAlgorithmTypes() const { return encodeAlgorithmType(nodeType); };
+    [[nodiscard]] inline int                                           getHeight() const { return height; };
 
     // This means all states are colored red
     bool isTerminal() const;

@@ -76,13 +76,13 @@ void DotPrinter::print_unvisited(const std::shared_ptr<MCTSNode>& node) {
         return;
 
     for (auto ref: node->getUnvisitedRefinements()) {
-        auto child = std::make_shared<MCTSNode>(unvisited--, nullptr, ref, -1, refinement_vector{}, refinement_vector{}, node);
+        auto child = std::make_shared<MCTSNode>(unvisited--, -1, node->getHeight() + 1, nullptr, ref, refinement_vector{}, refinement_vector{}, node);
         print_node(child);
         print_edge(node->getId(), child->getId(), 0);
     }
 
     for (auto ref: node->getUnvisitedExtendRefinements()) {
-        auto child = std::make_shared<MCTSNode>(unvisited--, nullptr, ref, -1, refinement_vector{}, refinement_vector{}, node);
+        auto child = std::make_shared<MCTSNode>(unvisited--, -1, node->getHeight() + 1, nullptr, ref, refinement_vector{}, refinement_vector{}, node);
         print_node(child);
         print_edge(node->getId(), child->getId(), 0);
     }
