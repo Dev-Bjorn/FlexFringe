@@ -101,16 +101,18 @@ refinement_vector MCTS::rollout(const std::shared_ptr<MCTSNode>& rolloutNode) co
         auto ref = chosenRef[index];
         ref->doref(merger);
         log.push_back(ref);
-
-        for (auto delRef: refs) {
-            if (delRef != ref) {
-                delRef->erase();
+        if (config.STORE_ROLLOUTS) rolloutNode->addRolloutStep(RolloutData{ref,refs, extendRefs, merger->get_final_apta_size()});
+        else {
+            for (auto delRef : refs) {
+                if (delRef != ref) {
+                    delRef->erase();
+                }
             }
-        }
 
-        for (auto delRef: extendRefs) {
-            if (delRef != ref) {
-                delRef->erase();
+            for (auto delRef : extendRefs) {
+                if (delRef != ref) {
+                    delRef->erase();
+                }
             }
         }
         auto [newRefs, newExtendRefs] = merger->get_refinements();
@@ -145,9 +147,9 @@ bool MCTS::backPropagation(double score, const std::shared_ptr<MCTSNode>& rollou
         bestScore       = score;
         bestNode        = rolloutNode;
         bestRefinements = copy;
-        return false;
+        return true;
     }
-    return true;
+    return config.STORE_ROLLOUTS;
 }
 
 void MCTS::eraseRollout(const refinement_vector& log) {
@@ -194,7 +196,7 @@ refinement_vector MCTS::expandBestLog() const {
         const auto                current  = *it;
         std::shared_ptr<MCTSNode> selected = nullptr;
         for (const auto& ref: n->getChildren()) {
-            if (equal(current, ref->getRefinement())) {
+            if (ref_equal(current, ref->getRefinement())) {
                 selected = ref;
                 break;
             }
@@ -256,7 +258,7 @@ refinement_vector MCTS::selectNode() {
         const auto score = stateEvaluator->evaluate(merger);
 
         // Placed before backpropagation
-        if (backPropagation(score, rolloutNode, log)) MCTS::eraseRollout(log);
+        if (!backPropagation(score, rolloutNode, log)) MCTS::eraseRollout(log);
         if (isConverged(rolloutNode, log)) {
             LOG_S(INFO) << "Convergence detected at node: " << rolloutNode->toString();
             break;

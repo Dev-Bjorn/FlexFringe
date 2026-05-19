@@ -12,6 +12,7 @@
 struct IterationConvergence : ConvergencePolicy {
 private:
     unsigned int maxIteration;
+    size_t iteration = 0;
 
 public:
     explicit IterationConvergence(const unsigned int maxIteration) : maxIteration(maxIteration) {

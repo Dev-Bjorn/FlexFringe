@@ -426,6 +426,7 @@ int main(int argc, char* argv[]) {
     mcts_cmd->add_option("--rollout-action-policy", MCTS_CONFIG.ROLLOUT_ACTION_POLICY, "The policy that determines which action to take during rollout. Default: uniform.");
     mcts_cmd->add_option("--rollout-action-seed", MCTS_CONFIG.ROLLOUT_ACTION_SEED, "Seed for uniform action policy. Default: 42.");
     mcts_cmd->add_option("--rollout-weighted-extend-scoring", MCTS_CONFIG.ROLLOUT_WEIGHTED_EXTEND_SCORING,  "Use a weight scoring metric to define the extend scores, when not provided by EXTEND_SCORING, using the \"weighted\" policy. Default: avg.");
+    mcts_cmd->add_option("--store-rollouts", MCTS_CONFIG.STORE_ROLLOUTS, "Whether to store the rollouts performed. Default: false");
 
     mcts_cmd->add_option("--node-selection-policy", MCTS_CONFIG.NODE_SELECTION_POLICY, "Selection policy for MCTS. Default: lcb1.");
     mcts_cmd->add_option("--selection-search-policy", MCTS_CONFIG.SELECTION_SEARCH_METHOD, "The search method used for node selection. Default: bfs.");

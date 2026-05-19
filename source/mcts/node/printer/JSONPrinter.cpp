@@ -10,7 +10,7 @@ std::string JSONPrinter::ind(const int depth) {
     return std::string(depth * 4, ' ');
 }
 
-void JSONPrinter::print_attributes(std::unordered_map<std::string, std::string> attributeMap, const int depth) {
+void JSONPrinter::print_attributes(std::ostream& output, std::unordered_map<std::string, std::string> attributeMap, const int depth) {
     auto sep = "";
     for (const auto& [key, value]: attributeMap) {
         if (config.PRINT_JSON_LINE_SEP_BETWEEN_ATTR) {
@@ -23,6 +23,112 @@ void JSONPrinter::print_attributes(std::unordered_map<std::string, std::string> 
     }
 }
 
+void JSONPrinter::print_ref(std::ostream& output, refinement* data, const int depth) {
+    std::unordered_map<std::string, std::string> attributeMap = {
+        {"refinement", "\"" + getRefinementName(data) + "\""},
+        {"involvedNodes", "[" + involvedRefinementNodes(data) + "]"},
+        {"refVisits", std::to_string(visits(data))},
+        {"refScore", std::to_string(data->score)},
+    };
+
+    if (config.PRINT_JSON_LINE_SEP_BETWEEN_ATTR) {
+        output << ind(depth) << "{\n";
+        print_attributes(output, attributeMap, depth + 1);
+        output << ind(depth) << "}";
+    } else {
+        output << "{";
+        print_attributes(output, attributeMap, depth);
+        output << "}";
+    }
+}
+
+std::string JSONPrinter::to_refs_string(const refinement_vector &data, const int depth) {
+    std::stringstream ss;
+
+    if (config.PRINT_JSON_LINE_SEP_BETWEEN_ATTR) {
+        ss << ind(depth) << "[\n";
+    } else {
+        ss << "[";
+    }
+
+    auto sep = "";
+    for (auto& rollout : data) {
+        ss << sep;
+        print_ref(ss, rollout, depth + 1);
+        if (config.PRINT_JSON_LINE_SEP_BETWEEN_ATTR) {
+            sep = ",\n";
+        } else {
+            sep = ",";
+        }
+    }
+
+    if (config.PRINT_JSON_LINE_SEP_BETWEEN_ATTR) {
+        ss << ind(depth) << "]\n";
+    } else {
+        ss << "]";
+    }
+
+    return ss.str();
+}
+
+
+
+
+
+void JSONPrinter::print_rollout_node(std::ostream &output,
+                                     const RolloutData &data, const int depth) {
+    std::unordered_map<std::string, std::string> attributeMap = {
+        {"refs", to_refs_string(data.refs, 1)},
+        {"extendRefs", to_refs_string(data.extendRefs, 1)},
+        {"refinement", "\"" + getRefinementName(data.ref) + "\""},
+        {"involvedNodes", "[" + involvedRefinementNodes(data.ref) + "]"},
+        {"refVisits", std::to_string(visits(data.ref))},
+        {"refScore", std::to_string(data.ref->score)},
+        {"dfaSize", std::to_string(data.dfaSize)},
+    };
+
+    if (config.PRINT_JSON_LINE_SEP_BETWEEN_ATTR) {
+        output << ind(depth) << "{\n";
+        print_attributes(output, attributeMap, depth + 1);
+        output << ind(depth) << "}";
+    } else {
+        output << "{";
+        print_attributes(output, attributeMap, depth);
+        output << "}";
+    }
+}
+
+std::string JSONPrinter::to_rollout_string(const std::vector<RolloutData>& rollouts, const int depth) {
+    std::stringstream ss;
+
+
+    if (config.PRINT_JSON_LINE_SEP_BETWEEN_ATTR) {
+        ss << ind(depth) << "[\n";
+    } else {
+        ss << "[";
+    }
+
+    auto sep = "";
+    for (auto& rollout : rollouts) {
+        ss << sep;
+        print_rollout_node(ss, rollout, depth + 1);
+        if (config.PRINT_JSON_LINE_SEP_BETWEEN_ATTR) {
+            sep = ",\n";
+        } else {
+            sep = ",";
+        }
+    }
+
+    if (config.PRINT_JSON_LINE_SEP_BETWEEN_ATTR) {
+        ss << ind(depth) << "]\n";
+    } else {
+        ss << "]";
+    }
+
+
+    return ss.str();
+}
+
 void JSONPrinter::print_node(const std::shared_ptr<MCTSNode>& node, const int depth) {
     std::unordered_map<std::string, std::string> attributeMap = {
         {"id", std::to_string(node->getId())},
@@ -30,6 +136,7 @@ void JSONPrinter::print_node(const std::shared_ptr<MCTSNode>& node, const int de
         {"height", std::to_string(node->getHeight())},
         {"visits", std::to_string(node->getContext() == nullptr ? 0 : node->getContext()->getVisits())},
         {"dfaSize", std::to_string(node->getDFASize())},
+        {"rollouts", to_rollout_string(node->getRollout(), depth + 1)},
         {"refinement", "\"" + getRefinementName(node->getRefinement()) + "\""},
         {"involvedNodes", "[" + involvedRefinementNodes(node->getRefinement()) + "]"},
         {"refVisits", std::to_string(visits(node->getRefinement()))},
@@ -43,11 +150,11 @@ void JSONPrinter::print_node(const std::shared_ptr<MCTSNode>& node, const int de
 
     if (config.PRINT_JSON_LINE_SEP_BETWEEN_ATTR) {
         output << ind(depth) << "{\n";
-        print_attributes(attributeMap, depth + 1);
+        print_attributes(output, attributeMap, depth + 1);
         output << ind(depth) << "}\n";
     } else {
         output << ind(depth) << "{";
-        print_attributes(attributeMap, depth);
+        print_attributes(output, attributeMap, depth);
         output << "}";
     }
 }
@@ -61,11 +168,11 @@ void JSONPrinter::print_edge(const std::tuple<int, int, int>& t, const int depth
 
     if (config.PRINT_JSON_LINE_SEP_BETWEEN_ATTR) {
         output << ind(depth) << "{\n";
-        print_attributes(attributeMap, depth + 1);
+        print_attributes(output, attributeMap, depth + 1);
         output << ind(depth) << "}\n";
     } else {
         output << ind(depth) << "{";
-        print_attributes(attributeMap, depth);
+        print_attributes(output, attributeMap, depth);
         output << "}";
     }
 }
@@ -109,11 +216,11 @@ void JSONPrinter::print_info(int depth) {
 
     if (config.PRINT_JSON_LINE_SEP_BETWEEN_ATTR) {
         output << ind(depth) << "\"info\": {\n";
-        print_attributes(attributeMap, depth + 1);
+        print_attributes(output, attributeMap, depth + 1);
         output << ind(depth) << "},\n";
     } else {
         output << ind(depth) << "\"info\": {";
-        print_attributes(attributeMap, depth);
+        print_attributes(output, attributeMap, depth);
         output << "},\n";
     }
 }

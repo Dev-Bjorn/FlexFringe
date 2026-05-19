@@ -10,6 +10,12 @@
 #include <mcts/AlgorithmTypes.h>
 #include <mcts/propagate/data/NodeData.h>
 
+struct RolloutData {
+    refinement* ref;
+    std::vector<refinement*> refs;
+    std::vector<refinement*> extendRefs;
+    int dfaSize ;
+};
 
 struct MCTSNode {
 private:
@@ -21,6 +27,7 @@ private:
     int                               dfaSize;
     std::unordered_set<AlgorithmType> nodeType;
     int                               height;
+    std::vector<RolloutData>          rollout;
 
     // --------------------- ACTIONS ----------------------
     // All possible actions that follow from this node are stored in the node
@@ -65,6 +72,7 @@ public:
     [[nodiscard]] inline bool                                          isInAlgorithm(AlgorithmType algorithm) const { return nodeType.contains(algorithm); };
     [[nodiscard]] inline int                                           getAlgorithmTypes() const { return encodeAlgorithmType(nodeType); };
     [[nodiscard]] inline int                                           getHeight() const { return height; };
+    [[nodiscard]] inline std::vector<RolloutData>                      getRollout() const { return rollout; };
 
     // This means all states are colored red
     bool isTerminal() const;
@@ -84,9 +92,9 @@ public:
 
     void setScore(double score);
 
-    void annotate(const AlgorithmType algorithm) {
-        nodeType.insert(algorithm);
-    }
+    void annotate(const AlgorithmType algorithm) { nodeType.insert(algorithm); }
+
+    inline void addRolloutStep(const RolloutData data) { rollout.push_back(std::move(data)); }
 };
 
 

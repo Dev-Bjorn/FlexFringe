@@ -44,7 +44,7 @@ void printTree(const MCTS& mcts) {
     std::cout << "MCTS tree printed to " << OUTPUT_FILE << ".mcts_tree.dot" << std::endl;
 }
 
-void eraseAllRefs(const std::shared_ptr<MCTSNode>& node) {
+void eraseAllRefs(const MCTSConfig& cfg, const std::shared_ptr<MCTSNode>& node) {
     std::queue<std::shared_ptr<MCTSNode>> queue;
     queue.push(node);
     while (!queue.empty()) {
@@ -59,10 +59,22 @@ void eraseAllRefs(const std::shared_ptr<MCTSNode>& node) {
             refinement->erase();
         }
 
+        if (cfg.STORE_ROLLOUTS) {
+            for (const auto& rollout : node->getRollout()) {
+                for (auto ref : rollout.refs) {
+                    ref->erase();
+                }
+
+                for (auto extend_ref : rollout.extendRefs) {
+                    extend_ref->erase();
+                }
+            }
+        }
         for (const auto& child: n->getChildren()) {
             queue.push(child);
         }
     }
+
 }
 
 
@@ -124,6 +136,6 @@ void runMCTS(std::unordered_map<std::string, std::tuple<state_merger*, evaluatio
     std::cout << "MCTS finished" << std::endl;
 
     LOG_S(INFO) << "Start Erasing Refinements";
-    eraseAllRefs(mcts.getRoot());
+    eraseAllRefs(config, mcts.getRoot());
     LOG_S(INFO) << "Complete Erasing Refinements";
 }

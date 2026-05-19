@@ -22,7 +22,15 @@ protected:
 
     static std::string ind(int depth);
 
-    void print_attributes(std::unordered_map<std::string, std::string> attributeMap, int depth);
+    void print_attributes(std::ostream &output,
+                     std::unordered_map<std::string, std::string> attributeMap,
+                     int depth);
+    void print_ref(std::ostream &output, refinement *data, int depth);
+    std::string to_refs_string(const refinement_vector &data, int depth);
+    void print_rollout_node(std::ostream &output, const RolloutData &data,
+                            int depth);
+    std::string to_rollout_string(const std::vector<RolloutData> &rollouts,
+                                  int depth);
 
     void print_node(const std::shared_ptr<MCTSNode>& node, int depth);
 

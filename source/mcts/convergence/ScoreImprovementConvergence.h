@@ -14,6 +14,7 @@ private:
     std::shared_ptr<QualityEvaluation> evaluator;
     unsigned int maxNoImprovementIterations;
     int          bestScore = std::numeric_limits<int>::max();
+    size_t       iteration = 0;
 
 public:
     explicit ScoreImprovementConvergence(

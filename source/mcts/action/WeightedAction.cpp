@@ -18,6 +18,7 @@ double WeightedAction::scoreExtend(const refinement_vector& refinements) const {
         auto sum    = std::accumulate(scores.begin(), scores.end(), 0.0);
         return sum / refinements.size();
     }
+
     throw std::invalid_argument("Invalid weightExtendScoring value: " + this->weightExtendScoring);
 }
 

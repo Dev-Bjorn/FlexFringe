@@ -165,6 +165,7 @@ add_library(Source STATIC
         mcts/action/WeightedAction.h
         mcts/convergence/NodeTerminalConvergence.cpp
         mcts/convergence/NodeTerminalConvergence.h
+        mcts/Refinements.cpp
 )
 
 ## create CMakeLists.txt in evaluation directory

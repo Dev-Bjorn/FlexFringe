@@ -49,7 +49,7 @@ size_t findIndex(const refinement_vector& refs, const int index, refinement* ref
     if (index < 0 || static_cast<std::size_t>(index) >= refs.size()) {
         for (size_t i = 0; i < refs.size(); ++i) {
             const auto& ref = refs.at(i);
-            if (equal(ref, refinement)) {
+            if (ref_equal(ref, refinement)) {
                 return i;
             }
         }

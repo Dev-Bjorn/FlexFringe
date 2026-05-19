@@ -5,10 +5,10 @@
 #include <mcts/convergence/IterationConvergence.h>
 
 bool IterationConvergence::isConverged(const std::shared_ptr<MCTSNode>&, const refinement_vector&) {
-    if (iteration >= maxIteration) {
+    if (++iteration >= maxIteration) {
+        LOG_S(INFO) << "Reached the maximum number of iterations";
         return true;
     }
 
-    iteration++;
     return false;
 }

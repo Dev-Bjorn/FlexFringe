@@ -9,10 +9,6 @@
 #include <mcts/propagate/QualityEvaluation.h>
 
 struct ConvergencePolicy {
-protected:
-    size_t iteration = 0;
-
-public:
     virtual ~ConvergencePolicy() = default;
 
     /**
