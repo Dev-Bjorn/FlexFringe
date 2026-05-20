@@ -166,6 +166,8 @@ add_library(Source STATIC
         mcts/convergence/NodeTerminalConvergence.cpp
         mcts/convergence/NodeTerminalConvergence.h
         mcts/Refinements.cpp
+        mcts/node/RolloutData.cpp
+        mcts/node/RolloutData.h
 )
 
 ## create CMakeLists.txt in evaluation directory

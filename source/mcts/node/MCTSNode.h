@@ -8,14 +8,8 @@
 #include <refinement.h>
 #include <vector>
 #include <mcts/AlgorithmTypes.h>
+#include <mcts/node/RolloutData.h>
 #include <mcts/propagate/data/NodeData.h>
-
-struct RolloutData {
-    refinement* ref;
-    std::vector<refinement*> refs;
-    std::vector<refinement*> extendRefs;
-    int dfaSize ;
-};
 
 struct MCTSNode {
 private:

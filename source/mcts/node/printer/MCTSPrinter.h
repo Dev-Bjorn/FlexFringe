@@ -16,11 +16,11 @@ protected:
     std::ofstream&                       output;
     std::shared_ptr<ExpansionRulePolicy> expansionRulePolicy;
 
-    static std::string getRefinementName(refinement* ref);
+    static std::string getRefinementName(const refinement* ref);
 
-    static std::string involvedRefinementNodes(refinement* refinement);
+    static std::string involvedRefinementNodes(const refinement* refinement);
 
-    static int visits(refinement* ref);
+    static int visits(const refinement* ref);
 
 public:
     virtual ~MCTSPrinter() = default;

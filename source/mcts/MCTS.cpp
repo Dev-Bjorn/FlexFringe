@@ -24,6 +24,7 @@ MCTS::MCTS(const MCTSConfig& cfg, state_merger* merger) : config(cfg), merger(me
         expansionRulePolicy
     );
     stateEvaluator = createQualityEvaluation(cfg.QUALITY_EVALUATOR_POLICY);
+    rolloutDataFactory = std::make_unique<RolloutDataFactory>(cfg);
 
     for (const auto& policy: cfg.CONVERGENCE_POLICIES) {
         convergencePolicy.push_back(createConvergencePolicy(policy, stateEvaluator, cfg));
@@ -101,8 +102,9 @@ refinement_vector MCTS::rollout(const std::shared_ptr<MCTSNode>& rolloutNode) co
         auto ref = chosenRef[index];
         ref->doref(merger);
         log.push_back(ref);
-        if (config.STORE_ROLLOUTS) rolloutNode->addRolloutStep(RolloutData{ref,refs, extendRefs, merger->get_final_apta_size()});
-        else {
+        if (config.STORE_ROLLOUTS) rolloutNode->addRolloutStep(rolloutDataFactory->create(ref, refs, extendRefs, merger->get_final_apta_size()));
+
+        if (!config.STORE_ROLLOUT_REFINEMENTS) {
             for (auto delRef : refs) {
                 if (delRef != ref) {
                     delRef->erase();

@@ -78,14 +78,19 @@ std::string JSONPrinter::to_refs_string(const refinement_vector &data, const int
 void JSONPrinter::print_rollout_node(std::ostream &output,
                                      const RolloutData &data, const int depth) {
     std::unordered_map<std::string, std::string> attributeMap = {
-        {"refs", to_refs_string(data.refs, 1)},
-        {"extendRefs", to_refs_string(data.extendRefs, 1)},
+        {"refsSize", std::to_string(data.refsSize)},
+        {"extendRefsSize", std::to_string(data.extendRefsSize)},
         {"refinement", "\"" + getRefinementName(data.ref) + "\""},
         {"involvedNodes", "[" + involvedRefinementNodes(data.ref) + "]"},
         {"refVisits", std::to_string(visits(data.ref))},
         {"refScore", std::to_string(data.ref->score)},
         {"dfaSize", std::to_string(data.dfaSize)},
     };
+
+    if (config.STORE_ROLLOUT_REFINEMENTS) {
+        attributeMap.insert({"extendRefs", to_refs_string(data.extendRefs, 1)});
+        attributeMap.insert({"refs", to_refs_string(data.refs, 1)});
+    }
 
     if (config.PRINT_JSON_LINE_SEP_BETWEEN_ATTR) {
         output << ind(depth) << "{\n";

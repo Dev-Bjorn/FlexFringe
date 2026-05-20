@@ -61,6 +61,10 @@ void eraseAllRefs(const MCTSConfig& cfg, const std::shared_ptr<MCTSNode>& node) 
 
         if (cfg.STORE_ROLLOUTS) {
             for (const auto& rollout : node->getRollout()) {
+                if (!cfg.STORE_ROLLOUT_REFINEMENTS) {
+                    rollout.ref->erase();
+                    continue;
+                }
                 for (auto ref : rollout.refs) {
                     ref->erase();
                 }

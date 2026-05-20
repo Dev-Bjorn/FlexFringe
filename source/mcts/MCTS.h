@@ -27,6 +27,7 @@ private:
 
     // Rollout Fields
     std::unique_ptr<ActionSelectionPolicy> rolloutActionSelector;
+    std::unique_ptr<RolloutDataFactory> rolloutDataFactory;
 
     // Expansion Fields
     std::unique_ptr<ActionSelectionPolicy> expandActionPolicy;
