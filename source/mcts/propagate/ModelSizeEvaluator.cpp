@@ -5,7 +5,7 @@
 
 #include <mcts/propagate/ModelSizeEvaluator.h>
 
-double ModelSizeEvaluator::evaluate(const state_merger* merger) const {
+double ModelSizeEvaluator::evaluate(const state_merger* merger, const std::shared_ptr<MCTSNode>&, const refinement_vector&) const {
     return merger->get_final_apta_size();
 }
 

@@ -3,6 +3,7 @@
 //
 
 #include <printer.h>
+#include <ranges>
 #include <state_merger.h>
 #include <input/inputdatalocator.h>
 #include <mcts/MCTS.h>
@@ -14,17 +15,23 @@
 
 // The MCTS Hot loop
 refinement_vector getComparisonResult(state_merger* merger, const MCTS& mcts) {
-    std::unique_ptr<QualityEvaluation> evaluator = createQualityEvaluation(mcts.getConfig().QUALITY_EVALUATOR_POLICY);
+    std::unique_ptr<QualityEvaluation> evaluator = createQualityEvaluation(mcts.getConfig().QUALITY_EVALUATOR_POLICY, mcts.getConfig());
     const std::unique_ptr<Algorithm>   algorithm = createAlgorithm(mcts.getConfig().COMPARISON_ALGORITHM, merger, std::move(evaluator), mcts.getNodeFactory());
     LOG_S(INFO) << "Comparison Algorithm Prepared";
     LOG_S(INFO) << "Starting Comparison Algorithm";
-    return algorithm->run(mcts.getRoot(), AlgorithmType::comparison);
+    return algorithm->run(mcts.getRoot(), comparison);
 }
 
 
 void applyRefinements(state_merger* merger, const refinement_vector& log) {
     for (const auto it: log) {
         it->doref(merger);
+    }
+}
+
+void undoRefinements(state_merger* merger, const refinement_vector& log) {
+    for (const auto it: std::views::reverse(log)) {
+        it->undo(merger);
     }
 }
 
@@ -100,7 +107,7 @@ void runMCTS(std::unordered_map<std::string, std::tuple<state_merger*, evaluatio
     LOG_S(INFO) << "MCTS Heuristic: " << mctsConfig.HEURISTIC_NAME;
     LOG_S(INFO) << "Greedy Heuristic: " << greedyConfig.HEURISTIC_NAME;
 
-    auto greedy_file = OUTPUT_FILE + ".greedy";
+    auto greedy_file = OUTPUT_FILE + "." + config.COMPARISON_ALGORITHM;
     auto mcts_file   = OUTPUT_FILE + ".mcts";
 
     config.EXPANSION_ACTION_SEED = resolveSeed(config.EXPANSION_ACTION_SEED);
@@ -128,6 +135,7 @@ void runMCTS(std::unordered_map<std::string, std::tuple<state_merger*, evaluatio
     LOG_S(INFO) << "Comparison Algorithm Complete";
 
     print_current_automaton(greedy_state_merger, greedy_file, ".final");
+    undoRefinements(greedy_state_merger, result);
 
     CURRENT_CONFIG = mctsConfig;
 

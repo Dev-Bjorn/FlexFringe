@@ -49,7 +49,8 @@ public:
     static void delete_trace(trace*);
     static trace* create_trace(inputdata* = nullptr);
 
-    static void delete_tail(tail*);
+    static void delete_tail(tail* t);
+
     static tail* create_tail(tail* other_tail);
 };
 

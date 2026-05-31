@@ -17,7 +17,7 @@ struct QualityEvaluation {
      * @param merger The state merger to evaluate
      * @return The score of the current state of the state merger
      */
-    virtual double evaluate(const state_merger* merger) const = 0;
+    virtual double evaluate(const state_merger* merger, const std::shared_ptr<MCTSNode>& rolloutNode, const refinement_vector& log) const = 0;
 
     /**
      * Compare two scores evaluated from this policy
@@ -31,8 +31,9 @@ struct QualityEvaluation {
 /**
  * Create the quality evaluation
  * @param evaluator The name of the quality evaluation to create
+ * @param config The MCTS configuration
  * @return A unique pointer to the created quality evaluation
  */
-std::unique_ptr<QualityEvaluation> createQualityEvaluation(std::string_view evaluator);
+std::unique_ptr<QualityEvaluation> createQualityEvaluation(const std::string_view evaluator, const MCTSConfig& config);
 
 #endif //FLEXFRINGE_QUALITY_STATE_EVALUATION_H

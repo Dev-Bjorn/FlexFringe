@@ -7,13 +7,16 @@
 refinement* GreedyAlgorithm::getRefinement(const std::shared_ptr<MCTSNode>& node) const {
     // Base Case
     if (node->isTerminal()) return nullptr;
-    if (node->getRefinements().empty()) {
-        return node->getExtendRefinements()[0];
-    }
 
     refinement* bestRef = nullptr;
 
     for (const auto ref: node->getRefinements()) {
+        if (bestRef == nullptr || comparator(ref, bestRef)) {
+            bestRef = ref;
+        }
+    }
+
+    for (const auto ref: node->getExtendRefinements()) {
         if (bestRef == nullptr || comparator(ref, bestRef)) {
             bestRef = ref;
         }
@@ -55,7 +58,7 @@ refinement_vector GreedyAlgorithm::updateRefinements(const std::shared_ptr<MCTSN
         greedyPicks.push_back(ref);
     }
 
-    node->setScore(evaluator->evaluate(merger));
+    node->setScore(evaluator->evaluate(merger, root, greedyPicks));
 
     LOG_S(INFO) << "Greedy picking done";
     return greedyPicks;

@@ -40,6 +40,7 @@ struct HeuristicConfig {
     int MARKOVIAN_MODEL = 0;
 
     // HEURISTIC SPECIFIC
+    double GINI_LAMBDA = 0.5;
     bool FINAL_PROBABILITIES = false;
     bool USE_LOWER_BOUND = false;
     float LOWER_BOUND = 0.0;

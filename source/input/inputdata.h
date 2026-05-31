@@ -84,6 +84,11 @@ public:
     void add_traces_to_apta(apta *the_apta);
     void add_trace_to_apta(trace *tr, apta *the_apta);
 
+
+    void add_symbol_attribute(const attribute_info& attr_info);
+    void add_trace_attribute(const attribute_info& attr_info);
+
+
     std::string& get_symbol(int a);
     int get_reverse_symbol(std::string a);
     std::string& get_type(int a);

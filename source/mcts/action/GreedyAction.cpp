@@ -7,7 +7,7 @@
 
 std::tuple<refinement_vector, int> GreedyAction::action(const refinement_vector& refinements, const refinement_vector& extendRefs) {
     if (refinements.empty() && extendRefs.empty()) return {refinement_vector{}, -1};
-    if (refinements.empty()) return {extendRefs, 0};
+
 
     size_t bestIndex = 0;
 
@@ -15,6 +15,19 @@ std::tuple<refinement_vector, int> GreedyAction::action(const refinement_vector&
         if (auto ref = refinements.at(i); comparator(ref, refinements.at(bestIndex))) {
             bestIndex = i;
         }
+    }
+
+    if (extendRefs.empty()) return {refinements, bestIndex};
+
+    size_t bestExtendIndex = 0;
+    for (size_t i = 1; i < extendRefs.size(); ++i) {
+        if (auto ref = extendRefs.at(i); comparator(ref, extendRefs.at(bestExtendIndex))) {
+            bestExtendIndex = i;
+        }
+    }
+
+    if (refinements.empty() || (comparator(extendRefs.at(bestExtendIndex), refinements.at(bestIndex)))) {
+        return {extendRefs, bestExtendIndex};
     }
 
     return {refinements, bestIndex};

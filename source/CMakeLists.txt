@@ -168,6 +168,16 @@ add_library(Source STATIC
         mcts/Refinements.cpp
         mcts/node/RolloutData.cpp
         mcts/node/RolloutData.h
+        mcts/propagate/RolloutLength.cpp
+        mcts/propagate/RolloutLength.h
+        mcts/propagate/PathLength.cpp
+        mcts/propagate/PathLength.h
+        mcts/propagate/ExtendAmount.cpp
+        mcts/propagate/ExtendAmount.h
+        mcts/propagate/InterpolateSizeAndLength.h
+        mcts/propagate/InterpolateSizeAndLength.cpp
+        mcts/StringReader.cpp
+        mcts/StringReader.h
 )
 
 ## create CMakeLists.txt in evaluation directory

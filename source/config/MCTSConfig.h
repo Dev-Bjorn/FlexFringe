@@ -69,6 +69,7 @@ struct MCTSConfig {
      // min: every extend score is equal to the min scoring of the split and merge refinements
      // max: every extend score is equal to the max scoring of the split and merge refinements
      // avg: every extend score is equal to the average scoring of the split and merge refinements
+     // none: every extend score is equal to 0 when extend scoring is equal to 0
      std::string ROLLOUT_WEIGHTED_EXTEND_SCORING = "avg";
      // Whether to store the rollout information of an expanded node
      bool STORE_ROLLOUTS = false;
@@ -77,6 +78,8 @@ struct MCTSConfig {
 
      // Quality Policies: model-size
      std::string QUALITY_EVALUATOR_POLICY = "model-size";
+     // Goal Policies: the goal of the algorithm.
+     std::string GOAL_EVALUATOR_POLICY = "model-size";
 
      // Selection Policies: lcb1
      std::string NODE_SELECTION_POLICY = "lcb1";

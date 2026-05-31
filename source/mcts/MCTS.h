@@ -13,10 +13,11 @@
 
 struct MCTS {
 private:
-    MCTSConfig                       config;
-    state_merger*                    merger;
-    std::shared_ptr<MCTSNode>        root;
-    std::shared_ptr<MCTSNodeFactory> nodeFactory;
+    MCTSConfig                         config;
+    state_merger*                      merger;
+    std::shared_ptr<MCTSNode>          root;
+    std::shared_ptr<MCTSNodeFactory>   nodeFactory;
+    std::shared_ptr<QualityEvaluation> goalEvaluator;
 
     int                       bestScore = std::numeric_limits<int>::max();
     std::shared_ptr<MCTSNode> bestNode;
@@ -27,7 +28,7 @@ private:
 
     // Rollout Fields
     std::unique_ptr<ActionSelectionPolicy> rolloutActionSelector;
-    std::unique_ptr<RolloutDataFactory> rolloutDataFactory;
+    std::unique_ptr<RolloutDataFactory>    rolloutDataFactory;
 
     // Expansion Fields
     std::unique_ptr<ActionSelectionPolicy> expandActionPolicy;

@@ -23,7 +23,8 @@ MCTS::MCTS(const MCTSConfig& cfg, state_merger* merger) : config(cfg), merger(me
         nodeSelectionPolicy,
         expansionRulePolicy
     );
-    stateEvaluator = createQualityEvaluation(cfg.QUALITY_EVALUATOR_POLICY);
+    stateEvaluator = createQualityEvaluation(cfg.QUALITY_EVALUATOR_POLICY, cfg);
+    goalEvaluator = createQualityEvaluation(cfg.GOAL_EVALUATOR_POLICY, cfg);
     rolloutDataFactory = std::make_unique<RolloutDataFactory>(cfg);
 
     for (const auto& policy: cfg.CONVERGENCE_POLICIES) {
@@ -127,6 +128,7 @@ refinement_vector MCTS::rollout(const std::shared_ptr<MCTSNode>& rolloutNode) co
 
 bool MCTS::backPropagation(double score, const std::shared_ptr<MCTSNode>& rolloutNode, const refinement_vector& log) {
     rolloutNode->setScore(score);
+    auto goalScore = goalEvaluator->evaluate(merger, rolloutNode, log);
 
     for (auto it = log.rbegin(); it != log.rend(); ++it) {
         (*it)->undo(merger);
@@ -141,12 +143,12 @@ bool MCTS::backPropagation(double score, const std::shared_ptr<MCTSNode>& rollou
         node = node->getParent();
     }
 
-    if (stateEvaluator->compare(score, bestScore)) {
+    if (goalEvaluator->compare(goalScore, bestScore)) {
         eraseRollout(bestRefinements);
-        LOG_S(INFO) << "New best score: " << score << " at node: " << rolloutNode->toString();
+        LOG_S(INFO) << "GOAL: New best score: " << goalScore << " at node: " << rolloutNode->toString();
 
         auto copy = log;
-        bestScore       = score;
+        bestScore       = goalScore;
         bestNode        = rolloutNode;
         bestRefinements = copy;
         return true;
@@ -257,7 +259,7 @@ refinement_vector MCTS::selectNode() {
 
         const auto log = rollout(rolloutNode);
         LOG_S(INFO) << "Current Expansion: " << rolloutNode->toString() << " after " << log.size() << " rollout steps has APTA size: " << merger->get_final_apta_size();
-        const auto score = stateEvaluator->evaluate(merger);
+        const auto score = stateEvaluator->evaluate(merger, rolloutNode, log);
 
         // Placed before backpropagation
         if (!backPropagation(score, rolloutNode, log)) MCTS::eraseRollout(log);

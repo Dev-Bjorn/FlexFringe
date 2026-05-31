@@ -5,6 +5,9 @@
 #include <mcts/convergence/NodeTerminalConvergence.h>
 
 bool NodeTerminalConvergence::isConverged(const std::shared_ptr<MCTSNode>& expansion, const refinement_vector&) {
-    if (expansion->isTerminal()) return true;
+    if (expansion->isTerminal()) {
+        LOG_S(INFO) << "Node is terminal";
+        return true;
+    }
     return false;
 }

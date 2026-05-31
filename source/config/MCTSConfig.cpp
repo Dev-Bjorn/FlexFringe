@@ -32,7 +32,13 @@ void MCTSConfig::log() const {
     LOG_S(INFO) << "Rollout Action Seed: " << ROLLOUT_ACTION_SEED;
     LOG_S(INFO) << "Rollout Cut Off: " << MAX_ROLLOUT_STEPS;
     LOG_S(INFO) << "Rollout Weighted Extend Scoring: " << ROLLOUT_WEIGHTED_EXTEND_SCORING;
+    LOG_S(INFO) << "Store Rollouts: " << STORE_ROLLOUTS;
+    LOG_S(INFO) << "Store Rollout Refinements: " << STORE_ROLLOUT_REFINEMENTS;
     LOG_S(INFO) << "Quality Evaluator Policy: " << QUALITY_EVALUATOR_POLICY;
+    LOG_S(INFO) << "Quality Interpolation Factor: " << QUALITY_INTERPOLATION_FACTOR;
+    LOG_S(INFO) << "Quality First Policy: " << QUALITY_FIRST_POLICY;
+    LOG_S(INFO) << "Quality Second Policy: " << QUALITY_SECOND_POLICY;
+    LOG_S(INFO) << "Goal Evaluator Policy: " << GOAL_EVALUATOR_POLICY;
     LOG_S(INFO) << "Selection Node Policy: " << NODE_SELECTION_POLICY;
     LOG_S(INFO) << "Selection Search Method: " << SELECTION_SEARCH_METHOD;
     LOG_S(INFO) << "UCB1 Constant: " << UCB1_CONSTANT;

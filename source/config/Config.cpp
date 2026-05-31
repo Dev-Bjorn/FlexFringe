@@ -46,6 +46,7 @@ void HeuristicConfig::log() {
     LOG_S(INFO) << "Correction Per Seen: " << CORRECTION_PER_SEEN;
     LOG_S(INFO) << "Check Parameter: " << CHECK_PARAMETER;
     LOG_S(INFO) << "Type Distributions: " << TYPE_DISTRIBUTIONS;
+    LOG_S(INFO) << "GINI Lambda" << GINI_LAMBDA;
     LOG_S(INFO) << "Symbol Distributions: " << SYMBOL_DISTRIBUTIONS;
     LOG_S(INFO) << "Type Consistent: " << TYPE_CONSISTENT;
     LOG_S(INFO) << "Nrows Sketches: " << NROWS_SKETCHES;

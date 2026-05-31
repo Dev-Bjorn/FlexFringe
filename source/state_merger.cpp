@@ -49,7 +49,7 @@ apta_node *state_merger::get_state_from_trace(trace *t) const {
  * @return tail*
  */
 trace *state_merger::get_trace_from_state(apta_node *n) {
-    return n->access_trace;
+    return n->get_access_trace();
 }
 
 /* --------------------------------- Special state sets, used by red blue framework -----------------------------*/
@@ -390,9 +390,12 @@ void state_merger::undo_split_single(apta_node *new_node, apta_node *old_node, t
             new_guard->target = nullptr;
             mem_store::delete_tail(new_child->tails_head);
             new_child->tails_head = nullptr;
+
             mem_store::delete_node(new_child);
 
             old_node->get_data()->split_undo(new_node->get_data());
+
+
         }
     }
     t->split_from->undo_split();
@@ -430,8 +433,8 @@ bool state_merger::split(apta_node *new_node, apta_node *old_node, int depth, bo
 
     tail_iterator it = tail_iterator(old_node);
     tail *t = *it;
-    new_node->access_trace = inputdata_locator::get()->access_trace(new_node->tails_head->past());
-    if (t != nullptr) old_node->access_trace = inputdata_locator::get()->access_trace(t->past());
+    new_node->set_access_trace(inputdata_locator::get()->access_trace(new_node->tails_head->past()));
+    if (t != nullptr) old_node->set_access_trace(inputdata_locator::get()->access_trace(t->past()));
 
     if (test) {
         // test early stopping conditions
@@ -641,6 +644,8 @@ bool state_merger::split_init(apta_node *red, tail *t, int attr, int depth, bool
     split(new_child, blue, depth + 1, evaluate, perform, test);
 
     if (!perform) {
+        undo_split(new_child, blue);
+
         blue->size += new_child->size;
         for (tail *t3 = new_child->tails_head; t3 != nullptr; t3 = t3->next()) {
             t3->split_from->undo_split();
@@ -933,7 +938,6 @@ refinement *state_merger::test_splits(apta_node *blue) {
         mem_store::delete_tail(new_node->tails_head);
         new_node->tails_head = nullptr;
         mem_store::delete_node(new_node);
-        sorted_tails.clear();
     }
 
     return result;
@@ -953,11 +957,11 @@ struct refinement_set_result {
         refinements->clear();
     }
 
-    constexpr static void insert(refinement_set *refinements, refinement *refinement) {
+    static void insert(refinement_set *refinements, refinement *refinement) {
         refinements->insert(refinement);
     }
 
-    constexpr static void insertExtends(refinement_set *refinements, refinement *refinement) {
+    static void insertExtends(refinement_set *refinements, refinement *refinement) {
         refinements->insert(refinement);
     }
 };
@@ -979,22 +983,22 @@ refinement_set *state_merger::get_possible_refinements() {
 struct refinement_tuple_result {
     using collection_type = std::tuple<refinement_vector, refinement_vector>;
 
-    constexpr static std::tuple<refinement_vector, refinement_vector> get() {
+    static std::tuple<refinement_vector, refinement_vector> get() {
         return {refinement_vector{}, refinement_vector{}};
     }
 
-    constexpr static void clear(std::tuple<refinement_vector, refinement_vector> &refinements) {
+    static void clear(std::tuple<refinement_vector, refinement_vector> &refinements) {
         for (auto &it: std::get<0>(refinements)) {
             it->erase();
         }
         std::get<0>(refinements).clear();
     }
 
-    constexpr static void insert(std::tuple<refinement_vector, refinement_vector> &refinements, refinement *ref) {
+    static void insert(std::tuple<refinement_vector, refinement_vector> &refinements, refinement *ref) {
         std::get<0>(refinements).push_back(ref);
     }
 
-    constexpr static void insertExtends(std::tuple<refinement_vector, refinement_vector> &refinements,
+    static void insertExtends(std::tuple<refinement_vector, refinement_vector> &refinements,
                                         refinement *ref) {
         std::get<1>(refinements).push_back(ref);
     }

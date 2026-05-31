@@ -14,9 +14,7 @@ void greedy_run(state_merger* merger){
     int num = 1;
 
     while( best_ref != nullptr ){
-        std::cout << " ";
-        best_ref->to_short_string();
-        std::cout << " ";
+        std::cout << " " << best_ref->to_short_string() << " ";
         std::cout.flush();
 
         std::stringstream ss;
@@ -30,7 +28,7 @@ void greedy_run(state_merger* merger){
         best_ref->doref(merger);
 
         //all_refs->push_back(best_ref);
-        delete best_ref;
+        best_ref->erase();
         best_ref = merger->get_best_refinement();
 
         num++;

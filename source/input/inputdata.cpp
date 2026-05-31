@@ -325,15 +325,23 @@ trace *inputdata::access_trace(tail *t) {
 }
 
 tail *inputdata::access_tail(tail *t) {
-    tail *res = mem_store::create_tail(nullptr);
-    res->td->index = t->td->index;
-    res->td->symbol = t->td->symbol;
-    for (int i = 0; i < this->get_num_symbol_attributes(); ++i) {
-        res->td->attr[i] = t->td->attr[i];
-    }
-    res->td->data = t->td->data;
-    res->tr = t->tr;
+    tail *res = mem_store::create_tail(t);
     return res;
+}
+
+
+void inputdata::add_symbol_attribute(const attribute_info& attr_info) {
+    for(auto & attr : symbol_attributes) {
+        if(attr.get_name() == attr_info.get_name()) return;
+    }
+    symbol_attributes.emplace_back(attr_info);
+}
+
+void inputdata::add_trace_attribute(const attribute_info& attr_info) {
+    for(auto & attr : trace_attributes) {
+        if(attr.get_name() == attr_info.get_name()) return;
+    }
+    trace_attributes.emplace_back(attr_info);
 }
 
 int inputdata::get_num_sequences() {
@@ -425,10 +433,16 @@ void inputdata::process_symbol_attributes(symbol_info &symbolinfo, tail *t) {
         for (auto &sattr_info: symbol_attribute_info) {
             symbol_attributes.emplace_back(sattr_info);
         }
+
+        t->td->attr = std::make_unique<double[]>(symbol_attributes.size());
+        for(size_t i = 0; i < symbol_attributes.size(); ++i){
+            t->td->attr[i] = 0.0;
+        }
     }
 
     size_t idx{};
     for (auto &sattr_info: symbol_attribute_info) {
+        assert(idx < symbol_attributes.size() && "Attribute index out of bounds");
         t->td->attr[idx] = symbol_attributes[idx].get_value(sattr_info.get_value());
         idx++;
     }
@@ -459,6 +473,10 @@ inputdata inputdata::with_alphabet_from(inputdata &other) {
     new_inputdata.r_alphabet = other.r_alphabet;
     new_inputdata.types = other.types;
     new_inputdata.r_types = other.r_types;
+    new_inputdata.symbol_types = other.symbol_types;
+    new_inputdata.r_symbol_types = other.r_symbol_types;
+    new_inputdata.symbol_attributes = other.symbol_attributes;
+    new_inputdata.trace_attributes = other.trace_attributes;
 
     return new_inputdata;
 }

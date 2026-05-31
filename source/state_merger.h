@@ -18,7 +18,7 @@ class state_merger;
 #include "mem_store.h"
 
 template<typename Collection>
-concept CollectionType = requires(Collection c, typename Collection::collection_type collection, refinement *ref, apta_node* red, apta_node* blue)
+concept CollectionType = requires(Collection c, typename Collection::collection_type collection, refinement* ref, apta_node* red, apta_node* blue)
 {
     typename Collection::collection_type;
     { c.get() } -> std::convertible_to<typename Collection::collection_type>;
@@ -33,101 +33,102 @@ concept CollectionType = requires(Collection c, typename Collection::collection_
  */
 class state_merger {
 private:
-    std::list<apta_node *> temporary_node_store;
+    std::list<apta_node*> temporary_node_store;
 
-    apta *aut;
-    inputdata *dat;
-    evaluation_function *eval;
+    apta*                aut;
+    inputdata*           dat;
+    evaluation_function* eval;
 
     int num_merges = 0;
 
-    std::map<int, apta_node *> *left_depth_map;
-    std::map<int, apta_node *> *right_depth_map;
+    std::map<int, apta_node*>* left_depth_map;
+    std::map<int, apta_node*>* right_depth_map;
 
     /* recursive state merging routines */
-    bool merge(apta_node *red, apta_node *blue);
+    bool merge(apta_node* red, apta_node* blue);
 
-    bool merge(apta_node *red, apta_node *blue, int depth, bool evaluate, bool perform, bool test);
+    bool merge(apta_node* red, apta_node* blue, int depth, bool evaluate, bool perform, bool test);
 
-    void merge_force(apta_node *red, apta_node *blue);
+    void merge_force(apta_node* red, apta_node* blue);
 
-    bool merge_test(apta_node *red, apta_node *blue);
+    bool merge_test(apta_node* red, apta_node* blue);
 
-    void undo_merge(apta_node *red, apta_node *blue);
+    void undo_merge(apta_node* red, apta_node* blue);
 
     /* recursive state splitting routines */
-    bool split_single(apta_node *red, apta_node *blue, tail *t, int depth, bool evaluate, bool perform, bool test);
+    bool split_single(apta_node* red, apta_node* blue, tail* t, int depth, bool evaluate, bool perform, bool test);
 
-    void undo_split_single(apta_node *red, apta_node *blue);
+    void undo_split_single(apta_node* red, apta_node* blue);
 
-    bool split(apta_node *red, apta_node *blue, int depth, bool evaluate, bool perform, bool test);
+    bool split(apta_node* red, apta_node* blue, int depth, bool evaluate, bool perform, bool test);
 
-    void undo_split(apta_node *red, apta_node *blue);
+    void undo_split(apta_node* red, apta_node* blue);
 
     /* copy splits from red state before merging */
-    void pre_split(apta_node *left, apta_node *right, int depth, bool evaluate, bool perform, bool test);
+    void pre_split(apta_node* left, apta_node* right, int depth, bool evaluate, bool perform, bool test);
 
-    void undo_pre_split(apta_node *red, apta_node *blue);
+    void undo_pre_split(apta_node* red, apta_node* blue);
 
-    template<typename Col> requires CollectionType<Col>
+    template<typename Col>
+        requires CollectionType<Col>
     Col::collection_type get_possible_refinements(Col collections);
 
 public:
-    state_merger(inputdata *, evaluation_function *, apta *);
+    state_merger(inputdata*, evaluation_function*, apta*);
 
     ~state_merger();
 
-    inline apta *get_aut() {
+    inline apta* get_aut() {
         return aut;
     }
 
-    inline inputdata *get_dat() {
+    inline inputdata* get_dat() {
         return dat;
     }
 
-    inline evaluation_function *get_eval() {
+    inline evaluation_function* get_eval() {
         return eval;
     }
 
     /* performing red-blue merges */
-    void perform_merge(apta_node *, apta_node *); // merge function already above
-    void undo_perform_merge(apta_node *, apta_node *);
+    void perform_merge(apta_node*, apta_node*); // merge function already above
+    void undo_perform_merge(apta_node*, apta_node*);
 
-    void perform_split(apta_node *, tail *, int);
+    void perform_split(apta_node*, tail*, int);
 
-    void undo_perform_split(apta_node *, tail *, int);
+    void undo_perform_split(apta_node*, tail*, int);
 
     /* creating new red states */
-    void extend(apta_node *blue);
+    void extend(apta_node* blue);
 
-    void undo_extend(apta_node *blue);
+    void undo_extend(apta_node* blue);
 
     /* find refinements */
-    refinement_set *get_possible_refinements();
+    refinement_set* get_possible_refinements();
 
     // Returns possible and extensions separately
     std::tuple<refinement_vector, refinement_vector> get_refinements();
 
 
-    refinement *get_best_refinement();
+    refinement* get_best_refinement();
 
-    refinement *test_splits(apta_node *blue);
+    refinement* test_splits(apta_node* blue);
 
-    refinement *test_merge(apta_node *, apta_node *);
+    refinement* test_merge(apta_node*, apta_node*);
 
-    state_set *get_all_states() const;
+    state_set* get_all_states() const;
 
-    state_list *get_all_states_as_list() const;
+    state_list* get_all_states_as_list() const;
 
-    state_set *get_red_states() const;
+    state_set* get_red_states() const;
 
-    state_set *get_blue_states() const;
+    state_set* get_blue_states() const;
 
-    state_set *get_candidate_states();
+    state_set* get_candidate_states();
 
-    state_set *get_sink_states();
+    state_set* get_sink_states();
 
-    state_set *get_non_sink_states() const;
+    state_set* get_non_sink_states() const;
 
     int get_final_apta_size() const;
 
@@ -139,13 +140,13 @@ public:
 
     void tojson();
 
-    void print_dot(FILE *);
+    void print_dot(FILE*);
 
-    void print_json(FILE *);
+    void print_json(FILE*);
 
-    int sink_type(apta_node *node);
+    int sink_type(apta_node* node);
 
-    bool sink_consistent(apta_node *node, int type);
+    bool sink_consistent(apta_node* node, int type);
 
     int num_sink_types();
 
@@ -154,37 +155,37 @@ public:
 
     void tojsonsinks();
 
-    refinement *test_split(apta_node *red, tail *t, int attr);
+    refinement* test_split(apta_node* red, tail* t, int attr);
 
-    apta_node *get_state_from_trace(trace *t) const;
+    apta_node* get_state_from_trace(trace* t) const;
 
-    static trace *get_trace_from_state(apta_node *n);
+    static trace* get_trace_from_state(apta_node* n);
 
-    void undo_split_init(apta_node *red, tail *t, int attr);
+    void undo_split_init(apta_node* red, tail* t, int attr);
 
-    bool split_init(apta_node *red, tail *t, int attr, int depth, bool evaluate, bool perform, bool test);
+    bool split_init(apta_node* red, tail* t, int attr, int depth, bool evaluate, bool perform, bool test);
 
-    void print_dot(const std::string &file_name);
+    void print_dot(const std::string& file_name);
 
-    void print_dot(std::ostream &output);
+    void print_dot(std::ostream& output);
 
-    void print_json(const std::string &file_name);
+    void print_json(const std::string& file_name);
 
     int get_num_merges();
 
     void depth_check_init();
 
-    void depth_check_fill(apta_node *node, std::map<int, apta_node *> *depth_map, int depth, bool use_symbol);
+    void depth_check_fill(apta_node* node, std::map<int, apta_node*>* depth_map, int depth, bool use_symbol);
 
-    bool depth_check_run(apta_node *left, apta_node *right, bool use_symbol);
+    bool depth_check_run(apta_node* left, apta_node* right, bool use_symbol);
 
-    bool pre_consistent(apta_node *left, apta_node *right);
+    bool pre_consistent(apta_node* left, apta_node* right);
 
     double get_best_refinement_score();
 
-    bool early_stop_merge(apta_node *left, apta_node *right, int depth, bool &val);
+    bool early_stop_merge(apta_node* left, apta_node* right, int depth, bool& val);
 
-    void undo_split_single(apta_node *new_node, apta_node *old_node, tail *t);
+    void undo_split_single(apta_node* new_node, apta_node* old_node, tail* t);
 };
 
 #endif /* _STATE_MERGER_H_ */

@@ -434,7 +434,9 @@ int main(int argc, char* argv[]) {
     mcts_cmd->add_option("--ucb1-constant", MCTS_CONFIG.UCB1_CONSTANT, "UCB1 exploration constant. Default: 1.4142135623730951.");
     mcts_cmd->add_option("--lcb1-constant", MCTS_CONFIG.LCB1_CONSTANT, "LCB1 exploration constant. Default: 1.4142135623730951.");
 
-    mcts_cmd->add_option("--valuation-policy", MCTS_CONFIG.QUALITY_EVALUATOR_POLICY, "Valuation policy for MCTS. Default: model_size.");
+    mcts_cmd->add_option("--valuation-policy", MCTS_CONFIG.QUALITY_EVALUATOR_POLICY, "Valuation policy for MCTS. Default: model-size.");
+
+    mcts_cmd->add_option("--goal-policy", MCTS_CONFIG.GOAL_EVALUATOR_POLICY, "Goal policy for MCTS. Default: model_size.");
 
     mcts_cmd->add_option("--print-unvisited", MCTS_CONFIG.PRINT_UNVISITED, "Print unvisited nodes. Default: false.");
     mcts_cmd->add_option("--print-json-line-sep-between-attr", MCTS_CONFIG.PRINT_JSON_LINE_SEP_BETWEEN_ATTR, "Print JSON line separator between attributes. Default: false.");
@@ -506,6 +508,7 @@ int main(int argc, char* argv[]) {
     hcmd->add_option("--typedist", current.TYPE_DISTRIBUTIONS, "Whether to perform tests on the type distributions of states. Default = 0.");
     hcmd->add_option("--symboldist", current.SYMBOL_DISTRIBUTIONS, "Whether to perform tests on the symbol distributions of states. Default = 1.");
     hcmd->add_option("--typeconsistent", current.TYPE_CONSISTENT, "Whether to enforce type consistency for states, i.e., to not merge positive states with negative ones. Default=1.");
+    hcmd->add_option("--gini_lambda", current.GINI_LAMBDA, "Gini final/pass-through weighting parameter in [0,1]. Final tails get lambda weight; pass-through tails get 1-lambda weight. Default=0.5.")->check(CLI::Range(0.0, 1.0));
 
     hcmd->add_option("--aptabound", current.APTA_SIZE_BOUND, "Lower bound on the APTA (entire data tree) size. When reached by greedy, no more merges will be performed. Default=0.");
     hcmd->add_option("--dfabound", current.DFA_SIZE_BOUND, "Upper bound on the Automaton (only red states) size. When reached by greedy, no more merges will be performed. Default=0.");
@@ -522,7 +525,7 @@ int main(int argc, char* argv[]) {
     hcmd->add_option("--randominitialization", current.RANDOM_INITIALIZATION_SKETCHES, "If 0 (zero), then initialize CMS deterministically. Elsewise, CMS becomes random. Default: 0.");
     hcmd->add_option("--futuresteps", current.NSTEPS_SKETCHES, "Number of steps into future when storing future in sketches. Default: 2.");
 
-    CLI11_PARSE(app, argc, argv)
+    CLI11_PARSE(app, argc, argv);
 
     if (!HEURISTIC_CONFIGS.empty()) {
         CURRENT_CONFIG = HEURISTIC_CONFIGS.front();

@@ -58,17 +58,11 @@ public:
     /**
      * Run the underlying algorithm on the given MCTS tree, this provides a comparison of the current algorithm.
      * @param root The root of the MCTS tree to run the algorithm on
-     * @param algorithmType The type of algorithm used
+     * @param at
      *
      */
-    refinement_vector run(const std::shared_ptr<MCTSNode>& root, AlgorithmType algorithmType);
+    refinement_vector run(const std::shared_ptr<MCTSNode>& root, AlgorithmType at);
 
-private:
-    /**
-     * Undo the refinements applied to the MCTS tree
-     * @param refs The refinements to undo, in the order from root to leaf
-     */
-    void undo(const refinement_vector& refs) const;
 };
 
 /**
