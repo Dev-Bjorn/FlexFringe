@@ -13,7 +13,8 @@
 enum AlgorithmType : uint8_t {
     mcts       = 1,
     finisher   = 2,
-    comparison = 3
+    comparison = 3,
+    best_node  = 4,
 };
 
 int encodeAlgorithmType(const std::unordered_set<AlgorithmType>& algorithm);

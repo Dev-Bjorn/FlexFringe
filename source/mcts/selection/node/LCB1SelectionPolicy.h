@@ -2,12 +2,12 @@
 // Created by bjorn on 4-5-2026.
 //
 
-#ifndef FLEXFRINGE_LCB1_SELECTION_H
-#define FLEXFRINGE_LCB1_SELECTION_H
+#ifndef FLEXFRINGE_LCB1_SELECTION_HPP
+#define FLEXFRINGE_LCB1_SELECTION_HPP
 #include <mcts/selection/node/NodeSelection.h>
 
 /**
- * @brief Selects nodes using the lowerbound confidence bound (LCB1) policy.
+ * @brief Selects a node using the lowerbound confidence bound (LCB1) policy.
  *
  * Use this policy for when minimization is required.
  */
@@ -16,7 +16,7 @@ private:
     double C;
 
 public:
-    explicit LCB1SelectionPolicy(const double LCB_constant) : C(LCB_constant) {
+    explicit LCB1SelectionPolicy(const double UCB_constant) : C(UCB_constant) {
     };
 
     [[nodiscard]] double score(const std::shared_ptr<MCTSNode>& node) const;
@@ -27,4 +27,4 @@ public:
 };
 
 
-#endif //FLEXFRINGE_LCB1_SELECTION_H
+#endif //FLEXFRINGE_LCB1_SELECTION_HPP

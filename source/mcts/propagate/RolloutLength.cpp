@@ -5,10 +5,14 @@
 
 #include <mcts/propagate/RolloutLength.h>
 
-double RolloutLengthEvaluator::evaluate(const state_merger* merger, const std::shared_ptr<MCTSNode>& node, const refinement_vector& log) const {
-    return log.size() + merger->get_final_apta_size();
+double RolloutLengthEvaluator::evaluate(const state_merger*, const std::shared_ptr<MCTSNode>&, const refinement_vector& log) const {
+    return log.size();
 }
 
-bool RolloutLengthEvaluator::compare(const double score1, const double score2) const {
-    return score1 < score2;
+double NormalisedRolloutLengthEvaluator::evaluate(const state_merger*, const std::shared_ptr<MCTSNode>&, const refinement_vector& log) const {
+    return normalise(log.size());
+}
+
+double NormalisedRolloutLengthEvaluator::normalise(const double value) const {
+    return (value - 1) / (initialPTASize - 1);
 }

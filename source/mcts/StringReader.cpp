@@ -5,7 +5,7 @@
 #include "StringReader.h"
 
 
-std::string readUntil(const std::initializer_list<char> stops) {
+std::string StringReader::readUntil(const std::initializer_list<char> stops) {
     std::string result;
     while (hasNext()) {
         const char c = peek();

@@ -22,17 +22,15 @@ protected:
   double num_merge;
 
 public:
-  // virtual bool consistent(state_merger *merger, apta_node* left, apta_node* right);
+  virtual bool consistent(state_merger *merger, apta_node* left, apta_node* right);
   virtual void update_score(state_merger *merger, apta_node* left, apta_node* right);
-  // virtual bool compute_consistency(state_merger *merger, apta_node* left, apta_node* right);
+  virtual bool compute_consistency(state_merger *merger, apta_node* left, apta_node* right);
   virtual double  compute_score(state_merger*, apta_node* left, apta_node* right);
 
   virtual void split_update_score_before(state_merger*, apta_node* left, apta_node* right, tail* t);
   virtual void split_update_score_after(state_merger*, apta_node* left, apta_node* right, tail* t);
   virtual bool split_compute_consistency(state_merger *, apta_node* left, apta_node* right);
   virtual double split_compute_score(state_merger *, apta_node* left, apta_node* right);
-
-  bool compute_consistency(state_merger* merger, apta_node* left, apta_node* right);
 
   virtual void reset(state_merger *merger);
 };

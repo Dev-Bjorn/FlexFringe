@@ -19,7 +19,7 @@ private:
     std::shared_ptr<MCTSNodeFactory>   nodeFactory;
     std::shared_ptr<QualityEvaluation> goalEvaluator;
 
-    int                       bestScore = std::numeric_limits<int>::max();
+    double                    bestScore;
     std::shared_ptr<MCTSNode> bestNode;
     refinement_vector         bestRefinements;
 

@@ -9,6 +9,12 @@ double ModelSizeEvaluator::evaluate(const state_merger* merger, const std::share
     return merger->get_final_apta_size();
 }
 
-bool ModelSizeEvaluator::compare(const double score1, const double score2) const {
-    return score1 < score2;
+
+double NormalisedModelSizeEvaluator::evaluate(const state_merger* merger, const std::shared_ptr<MCTSNode>&, const refinement_vector&) const {
+    return normalise(merger->get_final_apta_size());
 }
+
+double NormalisedModelSizeEvaluator::normalise(double value) const {
+    return (value - 1) / (initialPTASize - 1);
+}
+

@@ -90,12 +90,10 @@ add_library(Source STATIC
         mcts/node/MCTSNode.cpp
         mcts/MCTS.h
         mcts/MCTS.cpp
-        mcts/selection/node/LCB1SelectionPolicy.h
-        mcts/selection/node/LCB1SelectionPolicy.cpp
         mcts/selection/node/NodeSelection.cpp
         mcts/selection/node/NodeSelection.h
-        mcts/propagate/data/LUCB1Data.h
-        mcts/propagate/data/LUCB1Data.cpp
+        mcts/propagate/data/UCB1Data.h
+        mcts/propagate/data/UCB1Data.cpp
         mcts/action/UniformMergeSplitFirst.h
         mcts/action/UniformMergeSplitFirst.cpp
         mcts/action/ActionSelectionPolicy.h
@@ -170,14 +168,12 @@ add_library(Source STATIC
         mcts/node/RolloutData.h
         mcts/propagate/RolloutLength.cpp
         mcts/propagate/RolloutLength.h
-        mcts/propagate/PathLength.cpp
-        mcts/propagate/PathLength.h
-        mcts/propagate/ExtendAmount.cpp
-        mcts/propagate/ExtendAmount.h
-        mcts/propagate/InterpolateSizeAndLength.h
-        mcts/propagate/InterpolateSizeAndLength.cpp
+        mcts/propagate/Interpolate.h
+        mcts/propagate/Interpolate.cpp
         mcts/StringReader.cpp
         mcts/StringReader.h
+        mcts/selection/node/LCB1SelectionPolicy.cpp
+        mcts/selection/node/LCB1SelectionPolicy.h
 )
 
 ## create CMakeLists.txt in evaluation directory

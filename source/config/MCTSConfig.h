@@ -77,19 +77,19 @@ struct MCTSConfig {
      bool STORE_ROLLOUT_REFINEMENTS = false;
 
      // Quality Policies: model-size
-     std::string QUALITY_EVALUATOR_POLICY = "model-size";
-     // Goal Policies: the goal of the algorithm.
-     std::string GOAL_EVALUATOR_POLICY = "model-size";
+     std::string QUALITY_EVALUATOR_POLICY = "model-size(minimise)";
+     // Goal Evaluator Policies: the goal of the algorithm.
+     std::string GOAL_EVALUATOR_POLICY = "model-size(minimise)";
 
      // Selection Policies: lcb1
-     std::string NODE_SELECTION_POLICY = "lcb1";
+     std::string NODE_SELECTION_POLICY = "lcb1-normal";
      // Selection Search Method: bfs, best-child-vs-parent
      std::string SELECTION_SEARCH_METHOD = "bfs";
 
      // The LCB1 constant parameter
-     double LCB1_CONSTANT = std::sqrt(2.0);
+     double LCB1_CONSTANT = 1;
      // The UCB1 constant parameter
-     double UCB1_CONSTANT = std::sqrt(2.0);
+     double UCB1_CONSTANT = 1;
 
      void log() const;
 };

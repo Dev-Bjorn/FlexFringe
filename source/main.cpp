@@ -434,9 +434,8 @@ int main(int argc, char* argv[]) {
     mcts_cmd->add_option("--ucb1-constant", MCTS_CONFIG.UCB1_CONSTANT, "UCB1 exploration constant. Default: 1.4142135623730951.");
     mcts_cmd->add_option("--lcb1-constant", MCTS_CONFIG.LCB1_CONSTANT, "LCB1 exploration constant. Default: 1.4142135623730951.");
 
-    mcts_cmd->add_option("--valuation-policy", MCTS_CONFIG.QUALITY_EVALUATOR_POLICY, "Valuation policy for MCTS. Default: model-size.");
-
-    mcts_cmd->add_option("--goal-policy", MCTS_CONFIG.GOAL_EVALUATOR_POLICY, "Goal policy for MCTS. Default: model_size.");
+    mcts_cmd->add_option("--valuation-policy", MCTS_CONFIG.QUALITY_EVALUATOR_POLICY, "Valuation policy for MCTS. Default: model-size(minimise).");
+    mcts_cmd->add_option("--goal-policy", MCTS_CONFIG.GOAL_EVALUATOR_POLICY, "Goal policy for MCTS. Default: model_size(minimise).");
 
     mcts_cmd->add_option("--print-unvisited", MCTS_CONFIG.PRINT_UNVISITED, "Print unvisited nodes. Default: false.");
     mcts_cmd->add_option("--print-json-line-sep-between-attr", MCTS_CONFIG.PRINT_JSON_LINE_SEP_BETWEEN_ATTR, "Print JSON line separator between attributes. Default: false.");

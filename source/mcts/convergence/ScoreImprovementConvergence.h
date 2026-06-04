@@ -12,15 +12,15 @@
 struct ScoreImprovementConvergence : ConvergencePolicy {
 private:
     std::shared_ptr<QualityEvaluation> evaluator;
-    unsigned int maxNoImprovementIterations;
-    int          bestScore = std::numeric_limits<int>::max();
-    size_t       iteration = 0;
+    unsigned int                       maxNoImprovementIterations;
+    double                             bestScore;
+    size_t                             iteration = 0;
 
 public:
     explicit ScoreImprovementConvergence(
         const std::shared_ptr<QualityEvaluation> evaluator,
-        const int maxNoImprovementIterations
-    ) : evaluator(std::move(evaluator)), maxNoImprovementIterations(maxNoImprovementIterations) {
+        const int                                maxNoImprovementIterations
+    ) : evaluator(std::move(evaluator)), maxNoImprovementIterations(maxNoImprovementIterations), bestScore(evaluator->limit()) {
     };
 
     bool isConverged(const std::shared_ptr<MCTSNode>& expansion, const refinement_vector& refinements) override;

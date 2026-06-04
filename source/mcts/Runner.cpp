@@ -15,7 +15,7 @@
 
 // The MCTS Hot loop
 refinement_vector getComparisonResult(state_merger* merger, const MCTS& mcts) {
-    std::unique_ptr<QualityEvaluation> evaluator = createQualityEvaluation(mcts.getConfig().QUALITY_EVALUATOR_POLICY, mcts.getConfig());
+    std::unique_ptr<QualityEvaluation> evaluator = createQualityEvaluation(mcts.getConfig().QUALITY_EVALUATOR_POLICY, merger, mcts.getConfig());
     const std::unique_ptr<Algorithm>   algorithm = createAlgorithm(mcts.getConfig().COMPARISON_ALGORITHM, merger, std::move(evaluator), mcts.getNodeFactory());
     LOG_S(INFO) << "Comparison Algorithm Prepared";
     LOG_S(INFO) << "Starting Comparison Algorithm";

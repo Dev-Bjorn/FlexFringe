@@ -6,8 +6,8 @@
 #include <functional>
 #include <unordered_map>
 #include <mcts/Strings.h>
-#include <mcts/selection/node/NodeSelection.h>
 #include <mcts/selection/node/LCB1SelectionPolicy.h>
+#include <mcts/selection/node/NodeSelection.h>
 #include <mcts/selection/node/UCB1SelectionPolicy.h>
 
 std::shared_ptr<NodeSelectionPolicy> createNodeSelectionPolicy(const std::string_view policy, const MCTSConfig& config) {

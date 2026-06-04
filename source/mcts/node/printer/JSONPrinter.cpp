@@ -3,6 +3,7 @@
 //
 
 
+#include <fmt/chrono.h>
 #include <mcts/expansion/ExpansionRulePolicy.h>
 #include <mcts/node/printer/JSONPrinter.h>
 
@@ -142,16 +143,21 @@ void JSONPrinter::print_node(const std::shared_ptr<MCTSNode>& node, const int de
         {"visits", std::to_string(node->getContext() == nullptr ? 0 : node->getContext()->getVisits())},
         {"dfaSize", std::to_string(node->getDFASize())},
         {"rollouts", to_rollout_string(node->getRollout(), depth + 1)},
-        {"refinement", "\"" + getRefinementName(node->getRefinement()) + "\""},
-        {"involvedNodes", "[" + involvedRefinementNodes(node->getRefinement()) + "]"},
-        {"refVisits", std::to_string(visits(node->getRefinement()))},
-        {"refScore", std::to_string(node->getRefinement()->score)},
+        {"mergeSplitSize",  std::to_string(node->getRefinements().size())},
+        {"extendSize",  std::to_string(node->getExtendRefinements().size())},
         {"nodeTypes", std::to_string(node->getAlgorithmTypes())},
         {"isVisited", std::to_string(node->getId() >= 0)},
         {"isTerminal", std::to_string(node->isTerminal())},
         {"isExpandable", std::to_string(expansionRulePolicy->isExpandable(node))},
         {"exhaustedMerges", std::to_string(node->getUnvisitedRefinements().empty() && !node->getRefinements().empty())},
     };
+
+    if (node->getRefinement() != nullptr) {
+        attributeMap.insert({"refinement", "\"" + getRefinementName(node->getRefinement()) + "\""});
+        attributeMap.insert({"involvedNodes", "[" + involvedRefinementNodes(node->getRefinement()) + "]"});
+        attributeMap.insert({"refVisits", std::to_string(visits(node->getRefinement()))});
+        attributeMap.insert({"refScore", std::to_string(node->getRefinement()->score)});
+    }
 
     if (config.PRINT_JSON_LINE_SEP_BETWEEN_ATTR) {
         output << ind(depth) << "{\n";
@@ -253,7 +259,7 @@ void JSONPrinter::print(const std::shared_ptr<MCTSNode>& root) {
     output << "{\n";
     print_info(1);
     output << ind(1) << "\"nodes\":[\n";
-    output << ind(2) << "{\"id\": 0}";
+    print_node(root, 2);
 
     for (auto& node: nodes) {
         output << ",\n";

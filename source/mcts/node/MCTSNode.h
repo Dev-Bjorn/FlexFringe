@@ -88,7 +88,14 @@ public:
 
     void annotate(const AlgorithmType algorithm) { nodeType.insert(algorithm); }
 
-    inline void addRolloutStep(const RolloutData data) { rollout.push_back(std::move(data)); }
+    inline void addRolloutStep(RolloutData data) {
+        rollout.emplace_back(std::move(data));
+    }
+    inline void addRolloutSteps(std::vector<RolloutData> data) {
+        for (auto& d : data) {
+            rollout.emplace_back(std::move(d));
+        }
+    }
 };
 
 

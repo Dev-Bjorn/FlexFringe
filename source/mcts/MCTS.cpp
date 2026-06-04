@@ -23,8 +23,9 @@ MCTS::MCTS(const MCTSConfig& cfg, state_merger* merger) : config(cfg), merger(me
         nodeSelectionPolicy,
         expansionRulePolicy
     );
-    stateEvaluator = createQualityEvaluation(cfg.QUALITY_EVALUATOR_POLICY, cfg);
-    goalEvaluator = createQualityEvaluation(cfg.GOAL_EVALUATOR_POLICY, cfg);
+    stateEvaluator     = createQualityEvaluation(cfg.QUALITY_EVALUATOR_POLICY, merger, cfg);
+    goalEvaluator      = createQualityEvaluation(cfg.GOAL_EVALUATOR_POLICY, merger, cfg);
+    bestScore          = goalEvaluator->limit();
     rolloutDataFactory = std::make_unique<RolloutDataFactory>(cfg);
 
     for (const auto& policy: cfg.CONVERGENCE_POLICIES) {
@@ -44,7 +45,7 @@ std::shared_ptr<MCTSNode> MCTS::select() const {
 }
 
 bool MCTS::isConverged(const std::shared_ptr<MCTSNode>& expandedNode, const refinement_vector& rolloutLog) const {
-    if (config.FORCE_UNTIL_TERMINAL && rolloutLog.size() == 0) {
+    if (config.FORCE_UNTIL_TERMINAL && rolloutLog.empty()) {
         return false;
     }
     for (const auto& policy: convergencePolicy) {
@@ -106,13 +107,13 @@ refinement_vector MCTS::rollout(const std::shared_ptr<MCTSNode>& rolloutNode) co
         if (config.STORE_ROLLOUTS) rolloutNode->addRolloutStep(rolloutDataFactory->create(ref, refs, extendRefs, merger->get_final_apta_size()));
 
         if (!config.STORE_ROLLOUT_REFINEMENTS) {
-            for (auto delRef : refs) {
+            for (auto delRef: refs) {
                 if (delRef != ref) {
                     delRef->erase();
                 }
             }
 
-            for (auto delRef : extendRefs) {
+            for (auto delRef: extendRefs) {
                 if (delRef != ref) {
                     delRef->erase();
                 }
@@ -147,7 +148,7 @@ bool MCTS::backPropagation(double score, const std::shared_ptr<MCTSNode>& rollou
         eraseRollout(bestRefinements);
         LOG_S(INFO) << "GOAL: New best score: " << goalScore << " at node: " << rolloutNode->toString();
 
-        auto copy = log;
+        auto copy       = log;
         bestScore       = goalScore;
         bestNode        = rolloutNode;
         bestRefinements = copy;
@@ -215,13 +216,27 @@ refinement_vector MCTS::expandBestLog() const {
     }
 
     // Expand last node towards the end of the log
+    std::vector<std::shared_ptr<MCTSNode>> childNodes;
+    auto                                   beginIt = it;
+
     for (; it != bestRefinements.end(); ++it) {
         log.push_back(*it);
         (*it)->doref(merger);
         auto       [newRefs, newExtendRefs] = merger->get_refinements();
         const auto childNode                = nodeFactory->createMCTSNode(*it, merger->get_final_apta_size(), newRefs, newExtendRefs, n);
         n->expand(childNode, -1);
+        auto futureSteps = rolloutDataFactory->createRange(std::next(it), bestRefinements.end(), merger);
+        n->addRolloutSteps(std::move(futureSteps));
         n = childNode;
+        childNodes.push_back(childNode);
+    }
+
+    for (size_t i = 0; i < childNodes.size(); ++i) {
+        auto   refIt = beginIt + i;
+        double score = this->stateEvaluator->evaluate(merger, childNodes[i], {refIt, bestRefinements.end() - 1});
+        childNodes[i]->setScore(score);
+        childNodes[i]->updateContext(score);
+        childNodes[i]->annotate(AlgorithmType::best_node);
     }
 
     auto finishedLog = finishExpansion(n, log);
