@@ -32,8 +32,8 @@ to_win_path() {
 }
 
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
-RUNNER="$PROJECT_DIR/cmake-build-release/flexfringe.exe"
-RESULTS_BASE="$PROJECT_DIR/results"
+RUNNER="$PROJECT_DIR/cmake-build-release2/flexfringe.exe"
+RESULTS_BASE="$PROJECT_DIR/tests2"
 RUNS=${1:-1}
 
 # ---------------------------------------------------------------------------
@@ -44,11 +44,11 @@ PROBLEM_ID=${2:-18}
 PROBLEM_FILE="${PROBLEM_FILE:-"$PROJECT_DIR/data/staminadata/${PROBLEM_ID}_training.txt.dat"}"
 
 # Policies (iterated in order)
-POLICIES="uniform weighted-avg weighted-min uniform-merge-first weighted-merge-first"
+POLICIES="weighted-merge-first uniform weighted-avg weighted-min uniform-merge-first"
 
 # Beta  : norm-model-size reward metric.     Range: [1, |DFA_0|] per problem.
 BETA_MIN=1
-BETA_MAX=2
+BETA_MAX=30
 
 # Gamma : norm-rollout-length reward metric. Range: [1, |DFA_0|] per problem.
 GAMMA_MIN=1
@@ -206,7 +206,7 @@ run_experiment() {
     action_sub_policy=$(get_action_sub_policy "$policy")
 
     win_out_dir=$(to_win_path "$out_dir")
-    win_ini=$(to_win_path "$PROJECT_DIR/ini/mcts.ini")
+    win_ini=$(to_win_path "$PROJECT_DIR/ini/mcts2.ini")
     win_problem_file=$(to_win_path "$PROBLEM_FILE")
 
     echo ""
@@ -222,7 +222,6 @@ run_experiment() {
         "$win_problem_file" \
         mcts \
         --lcb1-constant                   "$lcb1_c" \
-        --valuation-policy                "$valuation_policy" \
         --rollout-action-seed             "$seed_val" \
         --rollout-action-policy           "$action_policy" \
         --rollout-weighted-extend-scoring "$action_sub_policy"

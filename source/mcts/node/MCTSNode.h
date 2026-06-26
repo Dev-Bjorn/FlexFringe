@@ -22,6 +22,8 @@ private:
     std::unordered_set<AlgorithmType> nodeType;
     int                               height;
     std::vector<RolloutData>          rollout;
+    size_t                            rolloutLength = 0;
+    size_t                            rolloutExtends = 0;
 
     // --------------------- ACTIONS ----------------------
     // All possible actions that follow from this node are stored in the node
@@ -67,6 +69,8 @@ public:
     [[nodiscard]] inline int                                           getAlgorithmTypes() const { return encodeAlgorithmType(nodeType); };
     [[nodiscard]] inline int                                           getHeight() const { return height; };
     [[nodiscard]] inline std::vector<RolloutData>                      getRollout() const { return rollout; };
+    [[nodiscard]] inline size_t                                        getRolloutLength() const { return rolloutLength; };
+    [[nodiscard]] inline size_t                                        getRolloutExtends() const { return rolloutExtends; };
 
     // This means all states are colored red
     bool isTerminal() const;
@@ -91,8 +95,14 @@ public:
     inline void addRolloutStep(RolloutData data) {
         rollout.emplace_back(std::move(data));
     }
+
+    inline void setRolloutInfo(const size_t length, const size_t extends) {
+        rolloutLength = length;
+        rolloutExtends = extends;
+    }
+
     inline void addRolloutSteps(std::vector<RolloutData> data) {
-        for (auto& d : data) {
+        for (auto& d: data) {
             rollout.emplace_back(std::move(d));
         }
     }

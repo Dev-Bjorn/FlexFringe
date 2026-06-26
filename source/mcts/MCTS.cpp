@@ -89,6 +89,7 @@ refinement_vector MCTS::rollout(const std::shared_ptr<MCTSNode>& rolloutNode) co
     auto [refs, extendRefs] = merger->get_refinements();
 
     int step = 0;
+    int extends = 0;
 
     while (!MCTSNode::isTerminal(refs, extendRefs)) {
         step++;
@@ -105,6 +106,7 @@ refinement_vector MCTS::rollout(const std::shared_ptr<MCTSNode>& rolloutNode) co
         ref->doref(merger);
         log.push_back(ref);
         if (config.STORE_ROLLOUTS) rolloutNode->addRolloutStep(rolloutDataFactory->create(ref, refs, extendRefs, merger->get_final_apta_size()));
+        else if (ref->type() == 3) extends++;
 
         if (!config.STORE_ROLLOUT_REFINEMENTS) {
             for (auto delRef: refs) {
@@ -122,6 +124,10 @@ refinement_vector MCTS::rollout(const std::shared_ptr<MCTSNode>& rolloutNode) co
         auto [newRefs, newExtendRefs] = merger->get_refinements();
         refs                          = std::move(newRefs);
         extendRefs                    = std::move(newExtendRefs);
+    }
+
+    if (!config.STORE_ROLLOUTS) {
+        rolloutNode->setRolloutInfo(log.size(), extends);
     }
 
     return log;

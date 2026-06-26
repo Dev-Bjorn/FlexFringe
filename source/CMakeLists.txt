@@ -174,6 +174,8 @@ add_library(Source STATIC
         mcts/StringReader.h
         mcts/selection/node/LCB1SelectionPolicy.cpp
         mcts/selection/node/LCB1SelectionPolicy.h
+        mcts/selection/ProgressiveWideningSearch.cpp
+        mcts/selection/ProgressiveWideningSearch.h
 )
 
 ## create CMakeLists.txt in evaluation directory

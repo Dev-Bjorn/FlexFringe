@@ -142,7 +142,6 @@ void JSONPrinter::print_node(const std::shared_ptr<MCTSNode>& node, const int de
         {"height", std::to_string(node->getHeight())},
         {"visits", std::to_string(node->getContext() == nullptr ? 0 : node->getContext()->getVisits())},
         {"dfaSize", std::to_string(node->getDFASize())},
-        {"rollouts", to_rollout_string(node->getRollout(), depth + 1)},
         {"mergeSplitSize",  std::to_string(node->getRefinements().size())},
         {"extendSize",  std::to_string(node->getExtendRefinements().size())},
         {"nodeTypes", std::to_string(node->getAlgorithmTypes())},
@@ -157,6 +156,14 @@ void JSONPrinter::print_node(const std::shared_ptr<MCTSNode>& node, const int de
         attributeMap.insert({"involvedNodes", "[" + involvedRefinementNodes(node->getRefinement()) + "]"});
         attributeMap.insert({"refVisits", std::to_string(visits(node->getRefinement()))});
         attributeMap.insert({"refScore", std::to_string(node->getRefinement()->score)});
+    }
+
+    if (config.STORE_ROLLOUTS) {
+        attributeMap.insert({"rollouts", to_rollout_string(node->getRollout(), depth + 1)});
+    } else {
+        attributeMap.insert({"rolloutLength", std::to_string(node->getRolloutLength())});
+        attributeMap.insert({"rolloutExtends", std::to_string(node->getRolloutExtends())});
+        attributeMap.insert({"rolloutMerges", std::to_string(node->getRolloutLength() - node->getRolloutExtends()) });
     }
 
     if (config.PRINT_JSON_LINE_SEP_BETWEEN_ATTR) {
@@ -239,9 +246,9 @@ void JSONPrinter::print_info(int depth) {
 void JSONPrinter::print(const std::shared_ptr<MCTSNode>& root) {
     std::queue<std::shared_ptr<MCTSNode>> queue;
 
-    for (auto child: root->getChildren()) {
+    for (const auto& child: root->getChildren()) {
         queue.push(child);
-        edges.push_back({0, child->getId(), child->getContext()->getVisits()});
+        edges.emplace_back(0, child->getId(), child->getContext()->getVisits());
     }
 
     while (!queue.empty()) {
@@ -250,9 +257,9 @@ void JSONPrinter::print(const std::shared_ptr<MCTSNode>& root) {
         nodes.push_back(expandNode);
         add_unvisited(expandNode);
 
-        for (auto child: expandNode->getChildren()) {
+        for (const auto& child: expandNode->getChildren()) {
             queue.push(child);
-            edges.push_back({expandNode->getId(), child->getId(), child->getContext()->getVisits()});
+            edges.emplace_back(expandNode->getId(), child->getId(), child->getContext()->getVisits());
         }
     }
 

@@ -17,6 +17,7 @@ tests/tests
 *.swp
 *.png
 *.log
+*log.txt
 *.result
 *.png
 
@@ -24,3 +25,5 @@ tests/tests
 source/gitversion.cpp
 source/evaluators.h
 CMakeFiles/
+
+
